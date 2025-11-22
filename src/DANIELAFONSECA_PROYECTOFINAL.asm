@@ -29,8 +29,6 @@ tShortP:          EQU 25     ; Tiempo minimo ShortPress x 10 mS
 tLongP:           EQU 3      ; Tiempo minimo LongPress en segundos
 tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
-tSegundosTCM:     EQU 15
-tMinutosTCM:      EQU 1
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB0:          EQU $01    ; Se define el bit 0 del PB en el puerto
@@ -191,7 +189,7 @@ MSG2_P1:          fcc "  uPROCESADORES  "
                   db $FF
 MSG2_P2:          fcc "    TAREA #5     "
                   db $FF
-                  
+
                       ORG $1200
 Msg_Modo_Espera:      fcc ""
                       db $FF
@@ -378,10 +376,10 @@ NoNewMsg        Jsr Decre_TablaTimers
 ;******************************************************************************
 
 Tarea_Conversion:
-                ;Ldaa BIN1                         ; Cargar primer binario
+                Ldaa #34                         ; Cargar primer binario
                 Jsr BIN_BCD_MUXP                  ; Convertirlo a BCD
                 Movb BCD,BCD1                     ; Guardarlo en BCD
-                ;Ldaa BIN2                         ; Cargar segundo binario
+                Ldaa #12                         ; Cargar segundo binario
                 Jsr BIN_BCD_MUXP                  ; Convertirlo a BCD
                 Movb BCD,BCD2                     ; Guardarlo en BCD
                 Jsr BCD_7Seg                      ; Convertir a valor de lectura
