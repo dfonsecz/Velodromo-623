@@ -84,7 +84,6 @@ DIG4              EQU $08
 
 ;================================== TAREA LCD ==================================
 
-                  ORG $102F  ; Comandos
 IniDsp:           db $28     ; Function Set
                   db $28     ; Function Set
                   db $06     ; Entry Mode Set
@@ -92,8 +91,8 @@ IniDsp:           db $28     ; Function Set
                   db $FF     ; Fin de trama
 Punt_LCD:         ds 2
 CharLCD:          ds 1
-Msg_L1:           ds 2
-Msg_L2:           ds 2
+Msg_L1:           ds 2       ; Puntero a mensaje para la primera linea de LCD
+Msg_L2:           ds 2       ; Puntero a mensaje para la segunda linea de LCD
 EstPres_SendLCD:  ds 2       ; Variable para guardar estado de Tarea Send LCD
 EstPres_TareaLCD: ds 2       ; Variable para guardar estado de Tarea LCD
 
@@ -105,26 +104,43 @@ ADD_L1:           EQU $80
 ADD_L2:           EQU $C0
 
 
-;================================ TAREA LEER PB1 ===============================
+;================================ TAREAS LEER PB ===============================
 
-                  ORG $103F
-EstPres_LeerPB1:  ds 2       ; Variable para guardar estado de Leer PB 1
+EstPres_LeerPB1:  ds 2       ; Variable para guardar estado de Leer PB1
+EstPres_LeerPB2:  ds 2       ; Variable para guardar estado de Leer PB2
 
-;================================== TAREA TCM ==================================
+;=============================== TAREA CONFIGURAR ==============================
 
-                  ORG $1041
-EstPres_TCM:      ds 2       ; Variable para guardar el estado de Tarea TCM
-MinutosTCM:       ds 1
+EstPres_TConfig:  ds 2       ; Variable para guardar el estado de Tarea Config
+ValorNumVueltas:  ds 1       ; Variable temporal para el numero de vueltas
+NumVueltas:       ds 1       ; Variable final para el numero de vueltas
+
+;================================= TAREA CORRER ================================
+
+EstPres_TCorrer:  ds 2       ; Variable para guardar el estado de Tarea Correr
+DeltaT:           ds 1
+Velocidad:        ds 1
+AcumVelocidad:    ds 2
+Vueltas:          ds 1
+
+;================================= TAREA BRILLO ================================
+
+EstPres_TBrillo:  ds 2       ; Variable para guardar el estado de Tarea Brillo
+
+;============================== TAREA LED TESTIGO ==============================
+
+EstPres_LDTst:    ds 2       ; Variable para guardar el estado de Tarea Led
+                             ; Testigo
 
 ;=================================== BANDERAS ==================================
 
                   ORG $1070
 Banderas_1:       ds 1
-ShortP0:          EQU $01
-LongP0:           EQU $02
-ShortP1:          EQU $04
-LongP1:           EQU $08
-ArrayOK:          EQU $10
+ShortP1:          EQU $01    ; Bandera de pulso corto en boton PB1
+LongP1:           EQU $02    ; Bandera de pulso largo en boton PB1
+ShortP2:          EQU $04    ; Bandera de pulso corto en boton PB2
+LongP2:           EQU $08    ; Bandera de pulso largo en boton PB2
+ArrayOK:          EQU $10    ; Bandera de que array se lleno correctamente
 
 Banderas_2:       ds 1
 RS:               EQU $01
@@ -136,36 +152,34 @@ LD_Red:           EQU $10
 LD_Green:         EQU $20
 LD_Blue:          EQU $40
 
-;============================== TAREA LED TESTIGO ==============================
-
-                  ORG $1080
-EstPres_LDTst     ds 1
-
 ;================================== GENERALES ==================================
 
 InicioLD:         EQU $55
 TemporalLD:       EQU $AA
 
+                  ORG $1080
+LED_Testigo:      ds 1
+
 ;==================================== TABLAS ===================================
 
                   ORG $1100
-Segment:          db $3F                ; "0"
-                  db $06                ; "1"
-                  db $5B                ; "2"
-                  db $4F                ; "3"
-                  db $66                ; "4"
-                  db $6D                ; "5"
-                  db $7D                ; "6"
-                  db $07                ; "7"
-                  db $7F                ; "8"
-                  db $6F                ; "9"
+Segment:          db $3F                ; 0
+                  db $06                ; 1
+                  db $5B                ; 2
+                  db $4F                ; 3
+                  db $66                ; 4
+                  db $6D                ; 5
+                  db $7D                ; 6
+                  db $07                ; 7
+                  db $7F                ; 8
+                  db $6F                ; 9
 
 ; Codigos de Teclas validas
                   ORG $1110
-Teclas:           db $01,$02,$03
-                  db $04,$05,$06
-                  db $07,$08,$09
-                  db $0B,$00,$0E
+Teclas:           db $01,$02,$03        ; 1, 2, 3
+                  db $04,$05,$06        ; 4, 5, 6
+                  db $07,$08,$09        ; 7, 8, 9
+                  db $0B,$00,$0E        ; B, 0, E
 
 ;================================== MENSAJES ===================================
 
@@ -177,6 +191,28 @@ MSG2_P1:          fcc "  uPROCESADORES  "
                   db $FF
 MSG2_P2:          fcc "    TAREA #5     "
                   db $FF
+                  
+                      ORG $1200
+Msg_Modo_Espera:      fcc ""
+                      db $FF
+Msg_Modo_Configurar:  fcc ""
+                      db $FF
+Msg_Esperando_Inicio: fcc ""
+                      db $FF
+Msg_Esperando_S1:     fcc ""
+                      db $FF
+Msg_Esperando_S2:     fcc ""
+                      db $FF
+Msg_TimerPant:        fcc ""
+                      db $FF
+Msg_Resultados:       fcc ""
+                      db $FF
+Msg_Alerta:           fcc ""
+                      db $FF
+Msg_Fin_Ciclo:        fcc ""
+                      db $FF
+Msg_Resumen:          fcc ""
+                      db $FF
 
 ;===============================================================================
 ;                              TABLA DE TIMERS
