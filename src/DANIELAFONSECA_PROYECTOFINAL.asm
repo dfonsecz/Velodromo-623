@@ -247,9 +247,9 @@ Fin_Base10ms:   dB $FF
 Tabla_Timers_Base100mS
 
 Timer1_100mS:   ds 1
-
 TimerLDTst:     ds 1
 TimerBrillo:    ds 1
+
 Fin_Base100mS:  dB $FF
 
 Tabla_Timers_Base1S
@@ -307,7 +307,7 @@ Fin_Base1S:      dB $FF
 
         ; Pantalla MUX
         Movb #$01,Cont_Dig
-        Movb #99,Brillo
+        ;Movb #99,Brillo
 
         ; Pantalla LCD
         Clr Banderas_1
@@ -393,12 +393,30 @@ FIN_TBrillo_1   Rts
 ;============================ TAREA BRILLO ESTADO 2 ============================
 
 TareaBrillo_Est2:
-FIN_TBrillo_2
+                Tst TimerBrillo
+                Bne FIN_TBrillo_2
+                Movb #$87,ATD0CTL5
+                Movw #TareaBrillo_Est2,EstPres_TBrillo
+FIN_TBrillo_2   Rts
 
 ;============================ TAREA BRILLO ESTADO 3 ============================
 
 TareaBrillo_Est3:
-FIN_TBrillo_3
+                BrClr ATD0STAT0,$80,FIN_TBrillo_3
+                Ldd ADR00H
+                Addd ADR01H
+                Addd ADR02H
+                Addd ADR03H
+                Lsrd
+                Lsrd
+                Ldy #100
+                Emul
+                Ldx #255
+                Idiv
+                Tfr X,A
+                Staa Brillo
+                Movw #TareaBrillo_Est1,EstPres_TBrillo
+FIN_TBrillo_3   Rts
 
 ;*******************************************************************************
 ;                               TAREA CONVERSIONES
