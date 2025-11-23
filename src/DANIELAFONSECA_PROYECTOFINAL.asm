@@ -391,16 +391,16 @@ Tarea_Brillo:
 ;============================ TAREA BRILLO ESTADO 1 ============================
 
 TareaBrillo_Est1:
-                Movb #tTimerBrillo,TimerBrillo
+                Movb #tTimerBrillo,TimerBrillo    ; Inicializar timer
                 Movw #TareaBrillo_Est2,EstPres_TBrillo
 FIN_TBrillo_1   Rts
 
 ;============================ TAREA BRILLO ESTADO 2 ============================
 
 TareaBrillo_Est2:
-                Tst TimerBrillo
-                Bne FIN_TBrillo_2
-                Movb #$87,ATD0CTL5
+                Tst TimerBrillo                   ; Cuando se acaba el timer
+                Bne FIN_TBrillo_2                 ; iniciar un ciclo de conver-
+                Movb #$87,ATD0CTL5                ; sion
                 Movw #TareaBrillo_Est3,EstPres_TBrillo
 FIN_TBrillo_2   Rts
 
@@ -408,23 +408,23 @@ FIN_TBrillo_2   Rts
 
 TareaBrillo_Est3:
                 BrClr ATD0STAT0,$80,FIN_TBrillo_3
-                Ldd ADR00H
+                Ldd ADR00H                        ; Obtener suma de 4 mediciones
                 Addd ADR01H
                 Addd ADR02H
                 Addd ADR03H
-                Lsrd
-                Lsrd
-                Ldy #100
-                Emul
+                Lsrd                              ; Dividir entre 4 para obtener
+                Lsrd                              ; el promedio
+                Ldy #100                          ; Normalizar
+                Emul                              ; Brillo = (Promedio)*100/255
                 Ldx #255
                 Idiv
                 Tfr X,A
-                Cmpa #100
-                Bne EscribirBrillo
-                Movb #99,Brillo
+                Cmpa #100                         ; Si es 100, escribir Brillo
+                Bne EscribirBrillo                ; como 99 para evitar que solo
+                Movb #99,Brillo                   ; quede encendido 1 dígito
                 Bra Brillo_Est1
-EscribirBrillo  Staa Brillo
-Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo
+EscribirBrillo  Staa Brillo                       ; Si es menor a 100, escribir
+Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo ; ese valor a Brillo
 FIN_TBrillo_3   Rts
 
 ;*******************************************************************************
