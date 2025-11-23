@@ -29,6 +29,7 @@ tShortP:          EQU 25     ; Tiempo minimo ShortPress x 10 mS
 tLongP:           EQU 3      ; Tiempo minimo LongPress en segundos
 tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
+tTimerBrillo:     EQU 4
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB0:          EQU $01    ; Se define el bit 0 del PB en el puerto
@@ -247,7 +248,8 @@ Tabla_Timers_Base100mS
 
 Timer1_100mS:   ds 1
 
-TimerLDTst:      ds 1
+TimerLDTst:     ds 1
+TimerBrillo:    ds 1
 Fin_Base100mS:  dB $FF
 
 Tabla_Timers_Base1S
@@ -384,7 +386,9 @@ Tarea_Brillo:
 ;============================ TAREA BRILLO ESTADO 1 ============================
 
 TareaBrillo_Est1:
-FIN_TBrillo_1
+                Movb #tTimerBrillo,TimerBrillo
+                Movw #TareaBrillo_Est2,Tarea_Brillo
+FIN_TBrillo_1   Rts
 
 ;============================ TAREA BRILLO ESTADO 2 ============================
 
