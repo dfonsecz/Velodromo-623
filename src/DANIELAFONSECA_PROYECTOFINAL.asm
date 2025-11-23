@@ -419,8 +419,12 @@ TareaBrillo_Est3:
                 Ldx #255
                 Idiv
                 Tfr X,A
-                Staa Brillo
-                Movw #TareaBrillo_Est1,EstPres_TBrillo
+                Cmpa #100
+                Bne EscribirBrillo
+                Movb #99,Brillo
+                Bra Brillo_Est1
+EscribirBrillo  Staa Brillo
+Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo
 FIN_TBrillo_3   Rts
 
 ;*******************************************************************************
@@ -428,10 +432,10 @@ FIN_TBrillo_3   Rts
 ;*******************************************************************************
 
 Tarea_Conversion:
-                Ldaa #34                         ; Cargar primer binario
+                Ldaa #34                          ; Cargar primer binario
                 Jsr BIN_BCD_MUXP                  ; Convertirlo a BCD
                 Movb BCD,BCD1                     ; Guardarlo en BCD
-                Ldaa #12                         ; Cargar segundo binario
+                Ldaa #12                          ; Cargar segundo binario
                 Jsr BIN_BCD_MUXP                  ; Convertirlo a BCD
                 Movb BCD,BCD2                     ; Guardarlo en BCD
                 Jsr BCD_7Seg                      ; Convertir a valor de lectura
