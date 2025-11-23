@@ -48,6 +48,11 @@ Patron:           ds 1       ; Variable para guardar patron a escribir y leer
 Funcion:          ds 1       ; Variable para guardar patron a escribir en LEDs
 EstPres_TCL:      ds 2       ; Variable para direccion de estado de maquina de
                              ; estados Tarea_Teclado
+                             
+F1:               EQU $01    ; Mascara para funcion 1 - Modo espera
+F2:               EQU $02    ; Mascara para funcion 2 - Modo configurar
+F3:               EQU $04    ; Mascara para funcion 3 - Modo correr
+F4:               EQU $08    ; Mascara para funcion 4 - Modo resumen
 
 ; Arreglo de teclas presionadas
                   ORG $1010
@@ -182,17 +187,10 @@ Teclas:           db $01,$02,$03        ; 1, 2, 3
 
 ;================================== MENSAJES ===================================
 
-MSG1_P1:          fcc "    ESCUELA DE   "
-                  db $FF
-MSG1_P2:          fcc " ING. ELECTRICA  "
-                  db $FF
-MSG2_P1:          fcc "  uPROCESADORES  "
-                  db $FF
-MSG2_P2:          fcc "    TAREA #5     "
-                  db $FF
-
                       ORG $1200
-Msg_Modo_Espera:      fcc ""
+Msg_Modo_Espera_P1:   fcc "*VELODROMO 623*"
+                      db $FF
+Msg_Modo_Espera_P2:   fcc "**MODO ESPERA**"
                       db $FF
 Msg_Modo_Configurar:  fcc ""
                       db $FF
@@ -337,8 +335,8 @@ Fin_Base1S:      dB $FF
 ;******************************************************************************
 
 Init_LCD        ; Inicializacion de Pantalla LCD (otros)
-                Movw #MSG1_P1,Msg_L1
-                Movw #MSG1_P2,Msg_L2
+                ;Movw #Msg_Modo_Espera_P1,Msg_L1
+                ;Movw #Msg_Modo_Espera_P2,Msg_L2
                 Movb #$FF,DDRK                    ; Inicializar como salida
                 Movw #IniDsp,Punt_LCD             ; Cargar direccion de comandos
                 BClr Banderas_2,RS                ; Inicializar banderas en 0
@@ -371,6 +369,7 @@ Despachador_Tareas
                 BrSet Banderas_2,LCD_OK,NoNewMsg
                 Jsr Tarea_LCD
 NoNewMsg        Jsr Decre_TablaTimers
+                Jsr Tarea_Modo_Espera
                 Jsr Tarea_Led_Testigo
                 Jsr Tarea_Conversion
                 Jsr Tarea_PantallaMUX
@@ -378,6 +377,19 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Teclado
                 Jsr Tarea_Brillo
                 Bra Despachador_Tareas
+                
+;*******************************************************************************
+;				TAREA MODO ESPERA
+;*******************************************************************************
+
+Tarea_Modo_Espera
+                BrSet Funcion,F1,FIN_Modo_Espera
+                Movw #Msg_Modo_Espera_P1,Msg_L1
+                Movw #Msg_Modo_Espera_P2,Msg_L2
+                Movb #$00,BCD1
+                Movb #$00,BCD2
+                Movb #F1,LEDS
+FIN_Modo_Espera Rts
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
