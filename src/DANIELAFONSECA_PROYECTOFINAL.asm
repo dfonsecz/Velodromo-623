@@ -1,4 +1,4 @@
-;******************************************************************************
+ ;******************************************************************************
 ;                              PROYECTO FINAL
 ;******************************************************************************
 #include registers.inc
@@ -379,17 +379,41 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Bra Despachador_Tareas
                 
 ;*******************************************************************************
-;				TAREA MODO ESPERA
+;                                TAREA MODO ESPERA
 ;*******************************************************************************
 
 Tarea_Modo_Espera
-                BrSet Funcion,F1,FIN_Modo_Espera
+                Ldaa Funcion
+                Cmpa #F1
+                Bne FIN_Modo_Espera
                 Movw #Msg_Modo_Espera_P1,Msg_L1
                 Movw #Msg_Modo_Espera_P2,Msg_L2
                 Movb #$00,BCD1
                 Movb #$00,BCD2
                 Movb #F1,LEDS
 FIN_Modo_Espera Rts
+
+;*******************************************************************************
+;                              TAREA MODO CONFIGURAR
+;*******************************************************************************
+
+Tarea_Configurar:
+FIN_TConfig
+
+;======================= TAREA MODO CONFIGURAR ESTADO 1 ========================
+
+TConfig_Est1:
+FIN_TConfig_1
+
+;======================= TAREA MODO CONFIGURAR ESTADO 2 ========================
+
+TConfig_Est2:
+FIN_TConfig_2
+
+;======================= TAREA MODO CONFIGURAR ESTADO 3 ========================
+
+TConfig_Est3:
+FIN_TConfig_3
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
