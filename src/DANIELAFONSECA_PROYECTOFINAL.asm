@@ -299,11 +299,15 @@ Fin_Base1S:      dB $FF
         Movw #Teclado_Est1,EstPres_TCL
         Movw #TareaLCD_Est1,EstPres_TareaLCD
         Movw #TareaSendLCD_Est1,EstPres_SendLCD
-        Movw #TareaBrillo_Est1,Tarea_Brillo
+        Movw #TareaBrillo_Est1,EstPres_TBrillo
 
         ; Inicializacion de Pantalla LCD (timers)
         Movw #tTimer260uS,Timer260uS
         Movw #tTimer40uS,Timer40uS
+        
+        Movb #$C0,ATD0CTL2
+        Movb #$20,ATD0CTL3
+        Movb #$90,ATD0CTL4
 
         ; Pantalla MUX
         Movb #$01,Cont_Dig
@@ -372,6 +376,7 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_PantallaMUX
                 Jsr Tarea_LeerPB
                 Jsr Tarea_Teclado
+                Jsr Tarea_Brillo
                 Bra Despachador_Tareas
 
 ;*******************************************************************************
@@ -387,7 +392,7 @@ Tarea_Brillo:
 
 TareaBrillo_Est1:
                 Movb #tTimerBrillo,TimerBrillo
-                Movw #TareaBrillo_Est2,Tarea_Brillo
+                Movw #TareaBrillo_Est2,EstPres_TBrillo
 FIN_TBrillo_1   Rts
 
 ;============================ TAREA BRILLO ESTADO 2 ============================
@@ -396,7 +401,7 @@ TareaBrillo_Est2:
                 Tst TimerBrillo
                 Bne FIN_TBrillo_2
                 Movb #$87,ATD0CTL5
-                Movw #TareaBrillo_Est2,EstPres_TBrillo
+                Movw #TareaBrillo_Est3,EstPres_TBrillo
 FIN_TBrillo_2   Rts
 
 ;============================ TAREA BRILLO ESTADO 3 ============================
