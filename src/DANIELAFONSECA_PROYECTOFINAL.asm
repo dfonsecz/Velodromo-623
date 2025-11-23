@@ -297,6 +297,7 @@ Fin_Base1S:      dB $FF
         Movw #Teclado_Est1,EstPres_TCL
         Movw #TareaLCD_Est1,EstPres_TareaLCD
         Movw #TareaSendLCD_Est1,EstPres_SendLCD
+        Movw #TareaBrillo_Est1,Tarea_Brillo
 
         ; Inicializacion de Pantalla LCD (timers)
         Movw #tTimer260uS,Timer260uS
@@ -371,19 +372,33 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Teclado
                 Bra Despachador_Tareas
 
-;******************************************************************************
+;*******************************************************************************
 ;                                  TAREA BRILLO
-;******************************************************************************
+;*******************************************************************************
+
+Tarea_Brillo:
+                Ldx EstPres_TBrillo
+                Jsr 0,X
+                Rts
 
 ;============================ TAREA BRILLO ESTADO 1 ============================
 
+TareaBrillo_Est1:
+FIN_TBrillo_1
+
 ;============================ TAREA BRILLO ESTADO 2 ============================
+
+TareaBrillo_Est2:
+FIN_TBrillo_2
 
 ;============================ TAREA BRILLO ESTADO 3 ============================
 
-;******************************************************************************
+TareaBrillo_Est3:
+FIN_TBrillo_3
+
+;*******************************************************************************
 ;                               TAREA CONVERSIONES
-;******************************************************************************
+;*******************************************************************************
 
 Tarea_Conversion:
                 Ldaa #34                         ; Cargar primer binario
