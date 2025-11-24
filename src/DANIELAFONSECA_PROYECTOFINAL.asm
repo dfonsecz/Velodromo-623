@@ -426,6 +426,7 @@ TConfig_Est1:
                 Ldaa Funcion
                 Movw #Msg_Modo_Config_P1,Msg_L1
                 Movw #Msg_Modo_Config_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
                 Ldaa NumVueltas
                 Jsr BIN_BCD_MUXP
                 Movb #$00,BCD2
@@ -474,9 +475,19 @@ FIN_TCorrer     Rts
 ;========================= TAREA MODO CORRER ESTADO 1 ==========================
 
 TCorrer_Est1:
+                Movb #$04,LEDS
+                Movw #Msg_Espera_Inicio_P1,Msg_L1
+                Movw #Msg_Espera_Inicio_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Movb #$00,BCD2
+                Movb #$00,BCD1
+                Movw #TCorrer_Est2,EstPres_TCorrer
 FIN_TCorrer_1   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 2 ==========================
+
+TCorrer_Est2:
+FIN_TCorrer_2   Rts
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
