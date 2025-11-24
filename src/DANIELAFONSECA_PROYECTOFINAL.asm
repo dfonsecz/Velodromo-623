@@ -1,4 +1,4 @@
- ;******************************************************************************
+;******************************************************************************
 ;                              PROYECTO FINAL
 ;******************************************************************************
 #include registers.inc
@@ -322,7 +322,7 @@ Fin_Base1S:      dB $FF
         Movb #$FF,Num_Array
 
         Movb #$00,Patron
-        Movb #$FF,Funcion
+        Movb #$FE,Funcion
 
         Lds #$3BFF
         Cli
@@ -385,10 +385,12 @@ NoNewMsg        Jsr Decre_TablaTimers
 
 Tarea_Modo_Espera
                 Ldaa Funcion
+                Eora #$FF
                 Cmpa #F1
                 Bne FIN_Modo_Espera
                 Movw #Msg_Modo_Espera_P1,Msg_L1
                 Movw #Msg_Modo_Espera_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
                 Movb #$00,BCD1
                 Movb #$00,BCD2
                 Ldaa #F1
@@ -400,7 +402,13 @@ FIN_Modo_Espera Rts
 ;*******************************************************************************
 
 Tarea_Configurar:
-FIN_TConfig
+                Ldaa Funcion
+                Cmpa #F2
+                Bne Rst_TConfig
+                Jsr 0,X
+                Bra FIN_TConfig
+Rst_TConfig     Movw #TConfig_Est1,EstPres_TConfig
+FIN_TConfig     Rts
 
 ;======================= TAREA MODO CONFIGURAR ESTADO 1 ========================
 
