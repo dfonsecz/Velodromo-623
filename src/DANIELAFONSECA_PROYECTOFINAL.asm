@@ -49,10 +49,10 @@ Funcion:          ds 1       ; Variable para guardar patron a escribir en LEDs
 EstPres_TCL:      ds 2       ; Variable para direccion de estado de maquina de
                              ; estados Tarea_Teclado
 
-F1:               EQU $01    ; Mascara para funcion 1 - Modo espera
-F2:               EQU $02    ; Mascara para funcion 2 - Modo configurar
-F3:               EQU $04    ; Mascara para funcion 3 - Modo correr
-F4:               EQU $08    ; Mascara para funcion 4 - Modo resumen
+F1:               EQU $EF    ; Mascara para funcion 1 - Modo espera
+F2:               EQU $DF    ; Mascara para funcion 2 - Modo configurar
+F3:               EQU $BF    ; Mascara para funcion 3 - Modo correr
+F4:               EQU $7F    ; Mascara para funcion 4 - Modo resumen
 
 ; Arreglo de teclas presionadas
                   ORG $1010
@@ -192,7 +192,9 @@ Msg_Modo_Espera_P1:   fcc "*VELODROMO 623*"
                       db $FF
 Msg_Modo_Espera_P2:   fcc "**MODO ESPERA**"
                       db $FF
-Msg_Modo_Configurar:  fcc ""
+Msg_Modo_Config_P1:   fcc "MODO CONFIGURAR"
+                      db $FF
+Msg_Modo_Config_P2:   fcc "* NUM VUELTAS *"
                       db $FF
 Msg_Esperando_Inicio: fcc ""
                       db $FF
@@ -291,6 +293,7 @@ Fin_Base1S:      dB $FF
         Movb #0,Timer_LP
 
         ; Inicializacion de estados de maquinas de estado
+        Movw #TConfig_Est1,EstPres_TConfig
         Movw #TareaLDTst_Est1,EstPres_LDTst
         Movw #PantallaMUX_Est1,EstPres_PantallaMUX
         Movw #LeerPB_Est1,EstPres_LeerPB1
@@ -322,7 +325,7 @@ Fin_Base1S:      dB $FF
         Movb #$FF,Num_Array
 
         Movb #$00,Patron
-        Movb #$FE,Funcion
+        Movb #F1,Funcion
 
         Lds #$3BFF
         Cli
@@ -371,8 +374,9 @@ Despachador_Tareas
                 Jsr Tarea_LCD
 NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Modo_Espera
+                Jsr Tarea_Configurar
                 Jsr Tarea_Led_Testigo
-                Jsr Tarea_Conversion
+                ;Jsr Tarea_Conversion
                 Jsr Tarea_PantallaMUX
                 Jsr Tarea_LeerPB
                 Jsr Tarea_Teclado
@@ -385,7 +389,7 @@ NoNewMsg        Jsr Decre_TablaTimers
 
 Tarea_Modo_Espera
                 Ldaa Funcion
-                Eora #$FF
+                ;Eora #$FF
                 Cmpa #F1
                 Bne FIN_Modo_Espera
                 Movw #Msg_Modo_Espera_P1,Msg_L1
@@ -393,8 +397,7 @@ Tarea_Modo_Espera
                 BClr Banderas_2,LCD_OK
                 Movb #$00,BCD1
                 Movb #$00,BCD2
-                Ldaa #F1
-                Movb #F1,LEDS
+                Movb #$01,LEDS
 FIN_Modo_Espera Rts
 
 ;*******************************************************************************
@@ -405,6 +408,8 @@ Tarea_Configurar:
                 Ldaa Funcion
                 Cmpa #F2
                 Bne Rst_TConfig
+                Movb #$02,LEDS
+                Ldx EstPres_TConfig
                 Jsr 0,X
                 Bra FIN_TConfig
 Rst_TConfig     Movw #TConfig_Est1,EstPres_TConfig
@@ -413,11 +418,21 @@ FIN_TConfig     Rts
 ;======================= TAREA MODO CONFIGURAR ESTADO 1 ========================
 
 TConfig_Est1:
-FIN_TConfig_1
+                Movw #Msg_Modo_Config_P1,Msg_L1
+                Movw #Msg_Modo_Config_P2,Msg_L2
+                Ldaa NumVueltas
+                Jsr BIN_BCD_MUXP
+                Movb #$00,BCD2
+                Movb BCD,BCD1
+                Jsr Borrar_Num_Array
+                BClr Banderas_1,ArrayOK
+                Movw #TConfig_Est2,EstPres_TConfig
+FIN_TConfig_1   Rts
 
 ;======================= TAREA MODO CONFIGURAR ESTADO 2 ========================
 
 TConfig_Est2:
+                BrSet Banderas_1,ArrayOK,FIN_TConfig_1
 FIN_TConfig_2
 
 ;======================= TAREA MODO CONFIGURAR ESTADO 3 ========================
