@@ -199,7 +199,9 @@ Msg_Modo_Config_P1:   fcc "MODO  CONFIGURAR"
                       db $FF
 Msg_Modo_Config_P2:   fcc "* NUM  VUELTAS *"
                       db $FF
-Msg_Esperando_Inicio: fcc ""
+Msg_Espera_Inicio_P1: fcc "* MODO  CORRER *"
+                      db $FF
+Msg_Espera_Inicio_P2: fcc "ESPERANDO INICIO"
                       db $FF
 Msg_Esperando_S1:     fcc ""
                       db $FF
@@ -297,6 +299,7 @@ Fin_Base1S:      dB $FF
 
         ; Inicializacion de estados de maquinas de estado
         Movw #TConfig_Est1,EstPres_TConfig
+        Movw #TCorrer_Est1,EstPres_TCorrer
         Movw #TareaLDTst_Est1,EstPres_LDTst
         Movw #PantallaMUX_Est1,EstPres_PantallaMUX
         Movw #LeerPB_Est1,EstPres_LeerPB1
@@ -378,6 +381,7 @@ Despachador_Tareas
 NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Modo_Espera
                 Jsr Tarea_Configurar
+                Jsr Tarea_Correr
                 Jsr Tarea_Led_Testigo
                 Jsr Tarea_PantallaMUX
                 Jsr Tarea_LeerPB
@@ -452,6 +456,27 @@ TConfig_Est2:
 BorrarNumArr_TC Jsr Borrar_Num_Array
                 Movw #TConfig_Est1,EstPres_TConfig
 FIN_TConfig_2   Rts
+
+;*******************************************************************************
+;                                TAREA MODO CORRER
+;*******************************************************************************
+
+Tarea_Correr:
+                Ldaa Funcion
+                Cmpa #F3
+                Bne Rst_TCorrer
+                Ldx EstPres_TCorrer
+                Jsr 0,X
+                Bra FIN_TCorrer
+Rst_TCorrer     Movw #TCorrer_Est1,EstPres_TCorrer
+FIN_TCorrer     Rts
+
+;========================= TAREA MODO CORRER ESTADO 1 ==========================
+
+TCorrer_Est1:
+FIN_TCorrer_1   Rts
+
+;========================= TAREA MODO CORRER ESTADO 2 ==========================
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
