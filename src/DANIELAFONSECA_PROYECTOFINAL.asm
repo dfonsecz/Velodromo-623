@@ -35,8 +35,8 @@ tTimerDigito:     EQU 2
 tTimerBrillo:     EQU 4
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
-MaskPB0:          EQU $01    ; Se define el bit 0 del PB en el puerto
 MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
+MaskPB2:          EQU $01    ; Se define el bit 0 del PB en el puerto
 
 ;=============================== TAREA TECLADO =================================
 
@@ -310,6 +310,7 @@ Fin_Base1S:      dB $FF
         Movw #TareaLDTst_Est1,EstPres_LDTst
         Movw #PantallaMUX_Est1,EstPres_PantallaMUX
         Movw #LeerPB1_Est1,EstPres_LeerPB1
+        Movw #LeerPB2_Est1,EstPres_LeerPB2
         Movw #Teclado_Est1,EstPres_TCL
         Movw #TareaLCD_Est1,EstPres_TareaLCD
         Movw #TareaSendLCD_Est1,EstPres_SendLCD
@@ -392,6 +393,7 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Led_Testigo
                 Jsr Tarea_PantallaMUX
                 Jsr Tarea_LeerPB1
+                Jsr Tarea_LeerPB2
                 Jsr Tarea_Teclado
                 Jsr Tarea_Brillo
                 Bra Despachador_Tareas
@@ -678,7 +680,7 @@ FIN_LDTst_3     Rts
 Tarea_LeerPB1:
                 Ldx EstPres_LeerPB1
                 Jsr 0,X
-FinTareaPB      Rts
+FinTareaPB1     Rts
 
 ;============================= LEER PB1 ESTADO 1 ===============================
 
@@ -716,7 +718,7 @@ FIN_Est3        Rts
 ;============================= LEER PB1 ESTADO 4 ===============================
 
 LeerPB1_Est4
-		Tst Timer_LP1                      ; Si no se agota el timer long
+                Tst Timer_LP1                      ; Si no se agota el timer long
                 Bne TestPB1                        ; press, y se presiona el boton
                 BrClr PortPB,MaskPB1,FIN_Est4      ; es un short press
                 BSet Banderas_1,LongP1
@@ -726,6 +728,62 @@ TestPB1         BrClr PortPB,MaskPB1,FIN_Est4
                 BSet Banderas_1,ShortP1
                 Bra Ret_Est1_3
 FIN_Est4        Rts
+
+;******************************************************************************
+;                               TAREA LEER PB2
+;******************************************************************************
+
+Tarea_LeerPB2:
+                Ldx EstPres_LeerPB2
+                Jsr 0,X
+FinTareaPB2     Rts
+
+;============================= LEER PB2 ESTADO 1 ===============================
+
+LeerPB2_Est1
+                BrSet PortPB,MaskPB2,FIN_Est1_2    ; Si el boton es presionado
+No_FIN_Est1_2   Movb #tSupRebPB2,Timer_RebPB2      ; Cargar timers
+                Movb #tShortP2,Timer_SHP2
+                Movb #tLongP2,Timer_LP2
+                Movw #LeerPB2_Est2,EstPres_LeerPB2 ; Continuar a estado 2
+FIN_Est1_2      Rts
+
+;============================= LEER PB2 ESTADO 2 ===============================
+
+LeerPB2_Est2
+                Tst Timer_RebPB2                   ; Si se agota el timer
+                Bne FIN_Est2_2                     ; verificar si aun sigue pre-
+                BrSet PortPB,MaskPB2,Ret_Est1_1_2  ; sionado el boton
+                Movw #LeerPB2_Est3,EstPres_LeerPB2
+                Bra FIN_Est2_2
+Ret_Est1_1_2    Movw #LeerPB2_Est1,EstPres_LeerPB2 ; Sino regresar a estado 1
+FIN_Est2_2      Rts
+
+;============================= LEER PB2 ESTADO 3 ===============================
+
+LeerPB2_Est3
+                Tst Timer_SHP2                     ; Verificar si el timer short
+                Bne FIN_Est3_2                     ; press se agoto
+                BrSet PortPB,MaskPB2,Ret_Est1_2_2  ; Si se presiona el boton
+                Movw #LeerPB2_Est4,EstPres_LeerPB2 ; Sino, pasar a estado 4
+                Bra FIN_Est3_2
+Ret_Est1_2_2    BSet Banderas_1,ShortP2            ; Levantar bandera ShortP y
+                Movw #LeerPB2_Est1,EstPres_LeerPB2 ; regresar a estado 1
+FIN_Est3_2      Rts
+
+;============================= LEER PB2 ESTADO 4 ===============================
+
+LeerPB2_Est4
+                Tst Timer_LP2                      ; Si no se agota el timer long
+                Bne TestPB2                        ; press, y se presiona el boton
+                BrClr PortPB,MaskPB2,FIN_Est4_2    ; es un short press
+                BSet Banderas_1,LongP2
+Ret_Est1_3_2    Movw #LeerPB2_Est1,EstPres_LeerPB2 ; sino es un long press
+                Bra FIN_Est4
+TestPB2         BrClr PortPB,MaskPB2,FIN_Est4_2
+                BSet Banderas_1,ShortP2
+                Bra Ret_Est1_3_2
+FIN_Est4_2      Rts
 
 ;*******************************************************************************
 ;                             TAREA PANTALLA MUX
