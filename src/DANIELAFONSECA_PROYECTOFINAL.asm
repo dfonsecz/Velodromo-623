@@ -191,13 +191,13 @@ Teclas:           db $01,$02,$03        ; 1, 2, 3
 ;================================== MENSAJES ===================================
 
                       ORG $1200
-Msg_Modo_Espera_P1:   fcc "*VELODROMO 623*"
+Msg_Modo_Espera_P1:   fcc "*VELODROMO  623*"
                       db $FF
-Msg_Modo_Espera_P2:   fcc "**MODO ESPERA**"
+Msg_Modo_Espera_P2:   fcc "**MODO  ESPERA**"
                       db $FF
-Msg_Modo_Config_P1:   fcc "MODO CONFIGURAR"
+Msg_Modo_Config_P1:   fcc "MODO  CONFIGURAR"
                       db $FF
-Msg_Modo_Config_P2:   fcc "* NUM VUELTAS *"
+Msg_Modo_Config_P2:   fcc "* NUM  VUELTAS *"
                       db $FF
 Msg_Esperando_Inicio: fcc ""
                       db $FF
@@ -379,7 +379,6 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Modo_Espera
                 Jsr Tarea_Configurar
                 Jsr Tarea_Led_Testigo
-                ;Jsr Tarea_Conversion
                 Jsr Tarea_PantallaMUX
                 Jsr Tarea_LeerPB
                 Jsr Tarea_Teclado
@@ -392,7 +391,6 @@ NoNewMsg        Jsr Decre_TablaTimers
 
 Tarea_Modo_Espera
                 Ldaa Funcion
-                ;Eora #$FF
                 Cmpa #F1
                 Bne FIN_Modo_Espera
                 Movw #Msg_Modo_Espera_P1,Msg_L1
@@ -428,6 +426,7 @@ TConfig_Est1:
                 Jsr BIN_BCD_MUXP
                 Movb #$00,BCD2
                 Movb BCD,BCD1
+                Jsr BCD_7Seg
                 Jsr Borrar_Num_Array
                 BClr Banderas_1,ArrayOK
                 Movw #TConfig_Est2,EstPres_TConfig
@@ -448,6 +447,7 @@ TConfig_Est2:
                 Jsr BIN_BCD_MUXP
                 Movb #$00,BCD2
                 Movb BCD,BCD1
+                Jsr BCD_7Seg
                 Movb ValorNumVueltas,NumVueltas
 BorrarNumArr_TC Jsr Borrar_Num_Array
                 Movw #TConfig_Est1,EstPres_TConfig
@@ -515,20 +515,6 @@ BCD_BIN:
                 Staa ValorNumVueltas
                 Rts
 
-;*******************************************************************************
-;                               TAREA CONVERSIONES
-;*******************************************************************************
-
-Tarea_Conversion:
-                Ldaa #34                          ; Cargar primer binario
-                Jsr BIN_BCD_MUXP                  ; Convertirlo a BCD
-                Movb BCD,BCD1                     ; Guardarlo en BCD
-                Ldaa #12                          ; Cargar segundo binario
-                Jsr BIN_BCD_MUXP                  ; Convertirlo a BCD
-                Movb BCD,BCD2                     ; Guardarlo en BCD
-                Jsr BCD_7Seg                      ; Convertir a valor de lectura
-FIN_TareaConv:  Rts                               ; valido para la pantalla
-
 ;=============================== BCD 7 SEGMENTOS ===============================
 ;
 ; Descripcion: Esta subrutina toma los valores de BCD1 y BCD2, y busca en la
@@ -562,7 +548,7 @@ BCD_7Seg:
                 Ldab A,X                          ; Cargar patron de segmento
                 Stab DSP3                         ; Guardar en DISP3
                 Ldaa BCD1
-                Anda #$0F                         ; Obtener nibble bajo de BCD1
+                Anda #$0F                         ; Obtener nibble bajo de g 2
                 Ldab A,X                          ; Cargar patron de segmento
                 Stab DSP4                         ; Guardar en DISP4
 FIN_BCD7_Seg    Rts
