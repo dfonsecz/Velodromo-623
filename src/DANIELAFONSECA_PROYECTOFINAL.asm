@@ -206,7 +206,9 @@ Msg_Espera_Inicio_P1: fcc "* MODO  CORRER *"
                       db $FF
 Msg_Espera_Inicio_P2: fcc "ESPERANDO INICIO"
                       db $FF
-Msg_Esperando_S1:     fcc ""
+Msg_Espera_S1_P1:     fcc "* MODO  CORRER *"
+                      db $FF
+Msg_Espera_S1_P2:     fcc "ESPERANDO S1... "
                       db $FF
 Msg_Esperando_S2:     fcc ""
                       db $FF
@@ -490,13 +492,35 @@ TCorrer_Est1:
                 BClr Banderas_2,LCD_OK
                 Movb #$00,BCD2
                 Movb #$00,BCD1
+                Jsr BCD_7Seg
                 Movw #TCorrer_Est2,EstPres_TCorrer
 FIN_TCorrer_1   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 2 ==========================
 
 TCorrer_Est2:
+                BrClr Banderas_1,LongP2,FIN_TCorrer_2
+                BClr Banderas_1,ShortP2
+                Movw #TCorrer_Est3,EstPres_TCorrer
 FIN_TCorrer_2   Rts
+
+;========================= TAREA MODO CORRER ESTADO 3 ==========================
+
+TCorrer_Est3:
+                Movw #Msg_Espera_S1_P1,Msg_L1
+                Movw #Msg_Espera_S1_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Movb #$00,BCD2
+                Movb #$00,BCD1
+                Jsr BCD_7Seg
+                Movw #TCorrer_Est4,EstPres_TCorrer
+FIN_TCorrer_3   Rts
+
+;========================= TAREA MODO CORRER ESTADO 4 ==========================
+
+TCorrer_Est4:
+
+FIN_TCorrer_4   Rts
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
