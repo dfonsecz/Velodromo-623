@@ -48,7 +48,7 @@ Patron:           ds 1       ; Variable para guardar patron a escribir y leer
 Funcion:          ds 1       ; Variable para guardar patron a escribir en LEDs
 EstPres_TCL:      ds 2       ; Variable para direccion de estado de maquina de
                              ; estados Tarea_Teclado
-                             
+
 F1:               EQU $01    ; Mascara para funcion 1 - Modo espera
 F2:               EQU $02    ; Mascara para funcion 2 - Modo configurar
 F3:               EQU $04    ; Mascara para funcion 3 - Modo correr
@@ -302,7 +302,7 @@ Fin_Base1S:      dB $FF
         ; Inicializacion de Pantalla LCD (timers)
         Movw #tTimer260uS,Timer260uS
         Movw #tTimer40uS,Timer40uS
-        
+
         Movb #$C0,ATD0CTL2
         Movb #$20,ATD0CTL3
         Movb #$90,ATD0CTL4
@@ -313,6 +313,7 @@ Fin_Base1S:      dB $FF
 
         ; Pantalla LCD
         Clr Banderas_1
+        Clr LEDS
 
         ; Teclado
         Movb #$FF,Tecla
@@ -335,8 +336,8 @@ Fin_Base1S:      dB $FF
 ;******************************************************************************
 
 Init_LCD        ; Inicializacion de Pantalla LCD (otros)
-                ;Movw #Msg_Modo_Espera_P1,Msg_L1
-                ;Movw #Msg_Modo_Espera_P2,Msg_L2
+                Movw #Msg_Modo_Espera_P1,Msg_L1
+                Movw #Msg_Modo_Espera_P2,Msg_L2
                 Movb #$FF,DDRK                    ; Inicializar como salida
                 Movw #IniDsp,Punt_LCD             ; Cargar direccion de comandos
                 BClr Banderas_2,RS                ; Inicializar banderas en 0
@@ -377,7 +378,7 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Teclado
                 Jsr Tarea_Brillo
                 Bra Despachador_Tareas
-                
+
 ;*******************************************************************************
 ;                                TAREA MODO ESPERA
 ;*******************************************************************************
@@ -390,6 +391,7 @@ Tarea_Modo_Espera
                 Movw #Msg_Modo_Espera_P2,Msg_L2
                 Movb #$00,BCD1
                 Movb #$00,BCD2
+                Ldaa #F1
                 Movb #F1,LEDS
 FIN_Modo_Espera Rts
 
@@ -457,7 +459,7 @@ TareaBrillo_Est3:
                 Tfr X,A
                 Cmpa #100                         ; Si es 100, escribir Brillo
                 Bne EscribirBrillo                ; como 99 para evitar que solo
-                Movb #99,Brillo                   ; quede encendido 1 dígito
+                Movb #99,Brillo                   ; quede encendido 1 d?gito
                 Bra Brillo_Est1
 EscribirBrillo  Staa Brillo                       ; Si es menor a 100, escribir
 Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo ; ese valor a Brillo
@@ -682,6 +684,7 @@ GoTo_Disp4      Cmpa #$04
                 Movb DSP4,PORTB
                 Bra Inc_Cont_Dig
 GoTo_Leds       BClr PTJ,$02
+                Ldaa LEDS
                 Movb LEDS,PORTB
                 Movb #$01,Cont_Dig
                 Bra Inc_Ticks
