@@ -119,6 +119,9 @@ EstPres_TConfig:  ds 2       ; Variable para guardar el estado de Tarea Config
 ValorNumVueltas:  ds 1       ; Variable temporal para el numero de vueltas
 NumVueltas:       ds 1       ; Variable final para el numero de vueltas
 
+MinNumVueltas:    EQU 3
+MaxNumVueltas:    EQU 20
+
 ;================================= TAREA CORRER ================================
 
 EstPres_TCorrer:  ds 2       ; Variable para guardar el estado de Tarea Correr
@@ -418,6 +421,7 @@ FIN_TConfig     Rts
 ;======================= TAREA MODO CONFIGURAR ESTADO 1 ========================
 
 TConfig_Est1:
+                Ldaa Funcion
                 Movw #Msg_Modo_Config_P1,Msg_L1
                 Movw #Msg_Modo_Config_P2,Msg_L2
                 Ldaa NumVueltas
@@ -432,8 +436,22 @@ FIN_TConfig_1   Rts
 ;======================= TAREA MODO CONFIGURAR ESTADO 2 ========================
 
 TConfig_Est2:
-                BrSet Banderas_1,ArrayOK,FIN_TConfig_1
-FIN_TConfig_2
+                Ldaa Funcion
+                BrClr Banderas_1,ArrayOK,FIN_TConfig_2
+                Jsr BCD_BIN
+                Ldaa ValorNumVueltas
+                Cmpa #MinNumVueltas
+                Bcs BorrarNumArr_TC
+                Cmpa #MaxNumVueltas
+                Bhi BorrarNumArr_TC
+                Ldaa ValorNumVueltas
+                Jsr BIN_BCD_MUXP
+                Movb #$00,BCD2
+                Movb BCD,BCD1
+                Movb ValorNumVueltas,NumVueltas
+BorrarNumArr_TC Jsr Borrar_Num_Array
+                Movw #TConfig_Est1,EstPres_TConfig
+FIN_TConfig_2   Rts
 
 ;======================= TAREA MODO CONFIGURAR ESTADO 3 ========================
 
@@ -487,6 +505,20 @@ TareaBrillo_Est3:
 EscribirBrillo  Staa Brillo                       ; Si es menor a 100, escribir
 Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo ; ese valor a Brillo
 FIN_TBrillo_3   Rts
+
+;*******************************************************************************
+;                               SUBRUTINA BCD_BIN
+;*******************************************************************************
+
+BCD_BIN:
+                Ldaa Num_Array
+                Ldab #10
+                Mul
+                Ldx #Num_Array
+                Ldaa 1,X
+                Aba
+                Staa ValorNumVueltas
+                Rts
 
 ;*******************************************************************************
 ;                               TAREA CONVERSIONES
