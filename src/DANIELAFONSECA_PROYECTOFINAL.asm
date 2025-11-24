@@ -33,6 +33,7 @@ tLongP2:           EQU 3      ; Tiempo minimo LongPress en segundos
 tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
 tTimerBrillo:     EQU 4
+tTimerCal:        EQU 100
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
@@ -210,7 +211,9 @@ Msg_Espera_S1_P1:     fcc "* MODO  CORRER *"
                       db $FF
 Msg_Espera_S1_P2:     fcc "ESPERANDO S1... "
                       db $FF
-Msg_Esperando_S2:     fcc ""
+Msg_Espera_S2_P1:     fcc "* MODO  CORRER *"
+                      db $FF
+Msg_Espera_S2_P2:     fcc "ESPERANDO S2... "
                       db $FF
 Msg_TimerPant:        fcc ""
                       db $FF
@@ -261,6 +264,7 @@ Tabla_Timers_Base100mS
 Timer1_100mS:   ds 1
 TimerLDTst:     ds 1
 TimerBrillo:    ds 1
+TimerCal:       ds 1
 
 Fin_Base100mS:  dB $FF
 
@@ -519,7 +523,13 @@ FIN_TCorrer_3   Rts
 ;========================= TAREA MODO CORRER ESTADO 4 ==========================
 
 TCorrer_Est4:
-
+                BrClr Banderas_1,ShortP1,FIN_TCorrer_4
+                Movb #tTimerCal,TimerCal
+                BClr Banderas_1,ShortP1
+                Movw #Msg_Espera_S2_P1,Msg_L1
+                Movw #Msg_Espera_S2_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Movw #TCorrer_Est4,EstPres_TCorrer
 FIN_TCorrer_4   Rts
 
 ;*******************************************************************************
