@@ -453,11 +453,6 @@ BorrarNumArr_TC Jsr Borrar_Num_Array
                 Movw #TConfig_Est1,EstPres_TConfig
 FIN_TConfig_2   Rts
 
-;======================= TAREA MODO CONFIGURAR ESTADO 3 ========================
-
-TConfig_Est3:
-FIN_TConfig_3
-
 ;*******************************************************************************
 ;                                  TAREA BRILLO
 ;*******************************************************************************
