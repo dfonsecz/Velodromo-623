@@ -188,6 +188,8 @@ Segment:          db $3F                ; 0
                   db $07                ; 7
                   db $7F                ; 8
                   db $6F                ; 9
+                  db $40                ; guion
+                  db $00                ; apagado
 
 ; Codigos de Teclas validas
                   ORG $1110
@@ -338,7 +340,8 @@ Fin_Base1S:      dB $FF
 
         ; Pantalla MUX
         Movb #$01,Cont_Dig
-        ;Movb #99,Brillo
+        Movb #$BB,BCD2
+        Movb #$BB,BCD1
 
         ; Pantalla LCD
         Clr Banderas_1
@@ -450,7 +453,7 @@ TConfig_Est1:
                 BClr Banderas_2,LCD_OK
                 Ldaa NumVueltas
                 Jsr BIN_BCD_MUXP
-                Movb #$00,BCD2
+                Movb #$BB,BCD2
                 Movb BCD,BCD1
                 Jsr BCD_7Seg
                 Jsr Borrar_Num_Array
@@ -471,7 +474,7 @@ TConfig_Est2:
                 Bhi BorrarNumArr_TC
                 Ldaa ValorNumVueltas
                 Jsr BIN_BCD_MUXP
-                Movb #$00,BCD2
+                Movb #$BB,BCD2
                 Movb BCD,BCD1
                 Jsr BCD_7Seg
                 Movb ValorNumVueltas,NumVueltas
@@ -500,8 +503,8 @@ TCorrer_Est1:
                 Movw #Msg_Espera_Inicio_P1,Msg_L1
                 Movw #Msg_Espera_Inicio_P2,Msg_L2
                 BClr Banderas_2,LCD_OK
-                Movb #$00,BCD2
-                Movb #$00,BCD1
+                Movb #$BB,BCD2
+                Movb #$BB,BCD1
                 Jsr BCD_7Seg
                 Movw #TCorrer_Est2,EstPres_TCorrer
 FIN_TCorrer_1   Rts
@@ -520,8 +523,8 @@ TCorrer_Est3:
                 Movw #Msg_Espera_S1_P1,Msg_L1
                 Movw #Msg_Espera_S1_P2,Msg_L2
                 BClr Banderas_2,LCD_OK
-                Movb #$00,BCD2
-                Movb #$00,BCD1
+                Movb #$BB,BCD2
+                Movb #$BB,BCD1
                 Jsr BCD_7Seg
                 Movw #TCorrer_Est4,EstPres_TCorrer
 FIN_TCorrer_3   Rts
@@ -600,11 +603,12 @@ FIN_TBrillo_3   Rts
 Calcula:
                 Ldd #tTimerCal                    ; tTimerCal=100
                 Subb TimerCal                     ; tTimerCal-(tTimerCal)
-                Ldx #10                           ; Pasar a cantidad de ticks
-                Idiv
-                Tfr X,A                           ; Mover parte baja a A
-                Staa DeltaT
-                Ldaa #DeltaS                      ; DeltaS=50 mts
+                ;Ldx #10                           ; Pasar a cantidad de ticks
+                ;Idiv
+                ;Tfr X,A                           ; Mover parte baja a A
+                ;Staa DeltaT
+                Stab DeltaT
+		Ldaa #DeltaS                      ; DeltaS=50 mts
                 Ldab #36
                 Mul                               ; (DeltaS)*36
                 Ldx DeltaT                        ; DeltaT=150 mts
