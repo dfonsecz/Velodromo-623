@@ -23,17 +23,17 @@ tTimer1S:         EQU 50000  ;Base de tiempo de 1 segundo (20uS x 50000)
 tTimer40uS:       EQU 2      ; Tiempo de timer de 40 uS (20uS x 2)
 tTimer260uS:      EQU 13     ; Tiempo de timer de 260 uS (20uS x 13)
 tTimer2ms:        EQU 100    ; Tiempo de timer de 2 mS (20uS x 100)
-tSupRebPB1:        EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
-tSupRebPB2:        EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
+tSupRebPB1:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
+tSupRebPB2:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
 tSupRebTCL:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (Teclado)
-tShortP1:          EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP1:           EQU 3      ; Tiempo minimo LongPress en segundos
-tShortP2:          EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP2:           EQU 3      ; Tiempo minimo LongPress en segundos
+tShortP1:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
+tLongP1:          EQU 3      ; Tiempo minimo LongPress en segundos
+tShortP2:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
+tLongP2:          EQU 3      ; Tiempo minimo LongPress en segundos
 tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
 tTimerBrillo:     EQU 4
-tTimerCal:        EQU 100
+tTimerCal:        EQU 100    ; Tiempo (100 mS x 100)
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
@@ -133,6 +133,10 @@ DeltaT:           ds 1
 Velocidad:        ds 1
 AcumVelocidad:    ds 2
 Vueltas:          ds 1
+
+DeltaS:           EQU 50
+DeltaM:           EQU 150
+DeltaP:           EQU 250
 
 ;================================= TAREA BRILLO ================================
 
@@ -265,6 +269,8 @@ Timer1_100mS:   ds 1
 TimerLDTst:     ds 1
 TimerBrillo:    ds 1
 TimerCal:       ds 1
+TimerIniPant:   ds 1
+TimerFinPant:   ds 1
 
 Fin_Base100mS:  dB $FF
 
@@ -529,8 +535,15 @@ TCorrer_Est4:
                 Movw #Msg_Espera_S2_P1,Msg_L1
                 Movw #Msg_Espera_S2_P2,Msg_L2
                 BClr Banderas_2,LCD_OK
-                Movw #TCorrer_Est4,EstPres_TCorrer
+                Movw #TCorrer_Est5,EstPres_TCorrer
 FIN_TCorrer_4   Rts
+
+;========================= TAREA MODO CORRER ESTADO 5 ==========================
+
+TCorrer_Est5:
+                BrClr Banderas_1,ShortP2,FIN_TCorrer_5
+                Jsr Calcula
+FIN_TCorrer_5   Rts
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
@@ -574,11 +587,52 @@ TareaBrillo_Est3:
                 Tfr X,A
                 Cmpa #100                         ; Si es 100, escribir Brillo
                 Bne EscribirBrillo                ; como 99 para evitar que solo
-                Movb #99,Brillo                   ; quede encendido 1 d?gito
+                Movb #99,Brillo                   ; quede encendido 1 dgito
                 Bra Brillo_Est1
 EscribirBrillo  Staa Brillo                       ; Si es menor a 100, escribir
 Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo ; ese valor a Brillo
 FIN_TBrillo_3   Rts
+
+;*******************************************************************************
+;                               SUBRUTINA CALCULA
+;*******************************************************************************
+
+Calcula:
+                Ldd #tTimerCal                    ; tTimerCal=100
+                Subb TimerCal                     ; tTimerCal-(tTimerCal)
+                Ldx #10                           ; Pasar a cantidad de ticks
+                Idiv
+                Tfr X,A                           ; Mover parte baja a A
+                Staa DeltaT
+                Ldaa #DeltaS                      ; DeltaS=50 mts
+                Ldab #36
+                Mul                               ; (DeltaS)*36
+                Ldx DeltaT                        ; DeltaT=150 mts
+                Idiv                              ; (DeltaS)*36/150
+                Tfr X,D
+                Ldx #10
+                Idiv                              ; (DeltaS)*36/(150*10)
+                Stx Velocidad                     ; Velocidad=(DeltaS)*36/(150*10)
+                Ldaa #DeltaM                      ; DeltaM = 150 mts
+                Ldab #100
+                Mul                               ; (DeltaM)*100
+                Ldx Velocidad
+                Idiv                              ; (DeltaM)*100/(Velocidad)
+                Tfr X,D
+                Ldx #36
+                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
+                Stx TimerIniPant                  ; TimerIniPant = lo de arriba
+                Ldaa #DeltaP                      ; DeltaP = 250 mts
+                Ldab #100
+                Mul                               ; (DeltaP)*100
+                Ldx Velocidad
+                Idiv                              ; (DeltaP)*100/(Velocidad)
+                Tfr X,D
+                Ldx #36
+                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
+                Stx TimerFinPant                  ; TimerFinPant = lo de arriba
+                Rts
+
 
 ;*******************************************************************************
 ;                               SUBRUTINA BCD_BIN
