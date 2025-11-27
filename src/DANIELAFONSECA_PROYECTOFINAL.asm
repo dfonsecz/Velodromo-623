@@ -244,6 +244,8 @@ Msg_Resumen_P1:       fcc "  MODO RESUMEN  "
                       db $FF
 Msg_Resumen_P2:       fcc "VUELTAS    VELOC"
                       db $FF
+Msg_Vacio:            fcc ""
+                      db $FF
 
 ;===============================================================================
 ;                              TABLA DE TIMERS
@@ -591,8 +593,8 @@ Fuera_Rango     Movw #Msg_Alerta_Vel_P1,Msg_L1
 Poner_Guion     Movb #$AA,BCD2
                 Movb #$AA,BCD1
 Mensaje_Borrar  Jsr BCD_7Seg
-                ;Movw Borrar,Msg_L1
-                ;Movw Borrar,Msg_L2
+                Movw Msg_Vacio,Msg_L1
+                Movw Msg_Vacio,Msg_L2
                 BClr Banderas_2,LCD_OK
                 Movb #tTimerError,TimerError
                 Movw #TCorrer_Est7,EstPres_TCorrer
@@ -712,24 +714,30 @@ FIN_TBrillo_3   Rts
 Calcula:
                 Ldd #tTimerCal                    ; tTimerCal=100
                 Subb TimerCal                     ; tTimerCal-(tTimerCal)
-                ;Ldx #10                           ; Pasar a cantidad de ticks
-                ;Idiv
-                ;Tfr X,A                           ; Mover parte baja a A
-                ;Staa DeltaT
-                Stab DeltaT
+                Ldx #10                           ; Pasar a cantidad de ticks
+                Idiv
+                Tfr X,A                           ; Mover parte baja a A
+                Staa DeltaT
                 Ldaa #DeltaS                      ; DeltaS=50 mts
                 Ldab #36
                 Mul                               ; (DeltaS)*36
-                Ldx DeltaT                        ; DeltaT=150 mts
-                Idiv                              ; (DeltaS)*36/150
+                Pshd
+                Ldaa DeltaT                       ; Paso DeltaT calculado a X
+                Tfr A,X
+                Puld
+                Idiv                              ; (DeltaS)*36/DeltaT
                 Tfr X,D
                 Ldx #10
-                Idiv                              ; (DeltaS)*36/(150*10)
-                Stx Velocidad                     ; Velocidad=(DeltaS)*36/(150*10)
+                Idiv                              ; (DeltaS)*36/(DeltaT*10)
+                Tfr X,A
+                Staa Velocidad                    ; Velocidad=(DeltaS)*36/(DeltaT*10)
                 Ldaa #DeltaM                      ; DeltaM = 150 mts
                 Ldab #100
                 Mul                               ; (DeltaM)*100
-                Ldx Velocidad
+                Pshd
+                Ldaa Velocidad
+                Tfr A,X
+                Puld
                 Idiv                              ; (DeltaM)*100/(Velocidad)
                 Tfr X,D
                 Ldx #36
