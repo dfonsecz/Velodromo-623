@@ -34,6 +34,7 @@ tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
 tTimerBrillo:     EQU 4
 tTimerCal:        EQU 100    ; Tiempo (100 mS x 100)
+tTimerError:      EQU 20
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
@@ -137,6 +138,8 @@ Vueltas:          ds 1
 DeltaS:           EQU 50
 DeltaM:           EQU 150
 DeltaP:           EQU 250
+VMax:             EQU 90
+VMin:             EQU 35
 
 ;================================= TAREA BRILLO ================================
 
@@ -221,11 +224,15 @@ Msg_Espera_S2_P1:     fcc "* MODO  CORRER *"
                       db $FF
 Msg_Espera_S2_P2:     fcc "ESPERANDO S2... "
                       db $FF
-Msg_TimerPant:        fcc ""
+Msg_TimerPant_P1:     fcc "**MODO  CORRER**"
+                      db $FF
+Msg_TimerPant_P2:     fcc "TIniP      TFinP"
                       db $FF
 Msg_Resultados:       fcc ""
                       db $FF
-Msg_Alerta:           fcc ""
+Msg_Alerta_Vel_P1:    fcc "**  VELOCIDAD **"
+                      db $FF
+Msg_Alerta_Vel_P2:    fcc "*FUERA DE RANGO*"
                       db $FF
 Msg_Fin_Ciclo:        fcc ""
                       db $FF
@@ -273,6 +280,7 @@ TimerBrillo:    ds 1
 TimerCal:       ds 1
 TimerIniPant:   ds 1
 TimerFinPant:   ds 1
+TimerError:     ds 1
 
 Fin_Base100mS:  dB $FF
 
@@ -424,8 +432,9 @@ Tarea_Modo_Espera
                 Movw #Msg_Modo_Espera_P1,Msg_L1
                 Movw #Msg_Modo_Espera_P2,Msg_L2
                 BClr Banderas_2,LCD_OK
-                Movb #$00,BCD1
-                Movb #$00,BCD2
+                Movb #$BB,BCD1
+                Movb #$BB,BCD2
+                Jsr BCD_7Seg
                 Movb #$01,LEDS
 FIN_Modo_Espera Rts
 
@@ -544,9 +553,54 @@ FIN_TCorrer_4   Rts
 ;========================= TAREA MODO CORRER ESTADO 5 ==========================
 
 TCorrer_Est5:
-                BrClr Banderas_1,ShortP2,FIN_TCorrer_5
+                BrClr Banderas_1,ShortP2,Bra_To_Fin
                 Jsr Calcula
+                Ldaa Velocidad
+                Cmpa #VMin
+                Bcs Fuera_Rango
+                Cmpa #VMax
+                Bhi Fuera_Rango
+                Movw #Msg_TimerPant_P1,Msg_L1
+                Movw #Msg_TimerPant_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Ldaa TimerIniPant
+                Jsr BIN_BCD_MUXP
+                Movb BCD,BCD2
+                Ldaa TimerFinPant
+                Jsr BIN_BCD_MUXP
+                Movb BCD,BCD2
+                Movw #TCorrer_Est6,EstPres_TCorrer
+Bra_To_Fin      Bra FIN_TCorrer_5
+Fuera_Rango     Movw #Msg_Alerta_Vel_P1,Msg_L1
+                Movw #Msg_Alerta_Vel_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Ldaa Velocidad
+                Cmpa #99
+                Bhi Poner_Guion
+                Ldaa Velocidad
+                Jsr BIN_BCD_MUXP
+                Movb BCD,BCD2
+                Movb #$BB,BCD1
+                Bra Mensaje_Borrar
+Poner_Guion     Movb #$AA,BCD2
+                Movb #$AA,BCD1
+Mensaje_Borrar  Jsr BCD_7Seg
+                ;Movw Borrar,Msg_L1
+                ;Movw Borrar,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Movb #tTimerError,TimerError
+                Movw #TCorrer_Est7,EstPres_TCorrer
 FIN_TCorrer_5   Rts
+
+;========================= TAREA MODO CORRER ESTADO 6 ==========================
+
+TCorrer_Est6:
+FIN_TCorrer_6
+
+;========================= TAREA MODO CORRER ESTADO 7 ==========================
+
+TCorrer_Est7:
+FIN_TCorrer_7
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
@@ -608,7 +662,7 @@ Calcula:
                 ;Tfr X,A                           ; Mover parte baja a A
                 ;Staa DeltaT
                 Stab DeltaT
-		Ldaa #DeltaS                      ; DeltaS=50 mts
+                Ldaa #DeltaS                      ; DeltaS=50 mts
                 Ldab #36
                 Mul                               ; (DeltaS)*36
                 Ldx DeltaT                        ; DeltaT=150 mts
