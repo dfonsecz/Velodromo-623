@@ -34,7 +34,7 @@ tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
 tTimerBrillo:     EQU 4
 tTimerCal:        EQU 100    ; Tiempo (100 mS x 100)
-tTimerError:      EQU 20
+tTimerError:      EQU 3
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
@@ -228,7 +228,7 @@ Msg_TimerPant_P1:     fcc "**MODO  CORRER**"
                       db $FF
 Msg_TimerPant_P2:     fcc "TIniP      TFinP"
                       db $FF
-Msg_Resultados_P1:    fcc "* MODO   CORRER*"
+Msg_Resultados_P1:    fcc "* MODO  CORRER *"
                       db $FF
 Msg_Resultados_P2:    fcc "VELOC.   VUELTAS"
                       db $FF
@@ -236,9 +236,13 @@ Msg_Alerta_Vel_P1:    fcc "**  VELOCIDAD **"
                       db $FF
 Msg_Alerta_Vel_P2:    fcc "*FUERA DE RANGO*"
                       db $FF
-Msg_Fin_Ciclo:        fcc ""
+Msg_Fin_Ciclo_P1:     fcc "* MODO  CORRER *"
                       db $FF
-Msg_Resumen:          fcc ""
+Msg_Fin_Ciclo_P2:     fcc "**FIN DE CICLO**"
+                      db $FF
+Msg_Resumen_P1:       fcc "  MODO RESUMEN  "
+                      db $FF
+Msg_Resumen_P2:       fcc "VUELTAS    VELOC"
                       db $FF
 
 ;===============================================================================
@@ -282,7 +286,6 @@ TimerBrillo:    ds 1
 TimerCal:       ds 1
 TimerIniPant:   ds 1
 TimerFinPant:   ds 1
-TimerError:     ds 1
 
 Fin_Base100mS:  dB $FF
 
@@ -291,6 +294,7 @@ Tabla_Timers_Base1S
 Timer_LP1:       ds 1
 Timer_LP2:       ds 1
 SegundosTCM:     ds 1
+TimerError:     ds 1
 
 Fin_Base1S:      dB $FF
 
@@ -621,8 +625,37 @@ FIN_TCorrer_7   Rts
 ;========================= TAREA MODO CORRER ESTADO 8 ==========================
 
 TCorrer_Est8:
-
+               Tst TimerFinPant
+               Bne FIN_TCorrer_8
+               Ldaa NumVueltas
+               BClr Banderas_1,LongP2
+               Movw #Msg_Fin_Ciclo_P1,Msg_L1
+               Movw #Msg_Fin_Ciclo_P2,Msg_L2
+               BClr Banderas_2,LCD_OK
+               Movw #TCorrer_Est2,EstPres_TCorrer
+               Bra FIN_TCorrer_8
+PasarA_TC_3    Movw #TCorrer_Est3,EstPres_TCorrer
 FIN_TCorrer_8  Rts
+
+;*******************************************************************************
+;                               TAREA MODO RESUMEN
+;*******************************************************************************
+
+Tarea_Resumen:
+               Ldaa Funcion
+               Cmpa #F4
+               Bne FIN_Resumen
+               Ldd AcumVelocidad
+               Ldx NumVueltas
+               Idiv
+               Tfr X,A
+               Staa BCD2
+               Movb NumVueltas,BCD1
+               Jsr BCD_7Seg
+               Movw #Msg_Resumen_P1,Msg_L1
+               Movw #Msg_Resumen_P2,Msg_L2
+               BClr Banderas_2,LCD_OK
+FIN_Resumen    Rts
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
