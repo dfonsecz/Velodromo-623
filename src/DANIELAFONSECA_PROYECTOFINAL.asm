@@ -228,7 +228,9 @@ Msg_TimerPant_P1:     fcc "**MODO  CORRER**"
                       db $FF
 Msg_TimerPant_P2:     fcc "TIniP      TFinP"
                       db $FF
-Msg_Resultados:       fcc ""
+Msg_Resultados_P1:    fcc "* MODO   CORRER*"
+                      db $FF
+Msg_Resultados_P2:    fcc "VELOC.   VUELTAS"
                       db $FF
 Msg_Alerta_Vel_P1:    fcc "**  VELOCIDAD **"
                       db $FF
@@ -595,12 +597,32 @@ FIN_TCorrer_5   Rts
 ;========================= TAREA MODO CORRER ESTADO 6 ==========================
 
 TCorrer_Est6:
-FIN_TCorrer_6
+                Tst TimerIniPant
+                Bne FIN_TCorrer_6
+                Inc Vueltas
+                ;Movb Vueltas,AcumVueltas
+                Movb Velocidad,BCD2
+                Movb Vueltas,BCD1
+                Jsr BCD_7Seg
+                Movw #Msg_Resultados_P1,Msg_L1
+                Movw #Msg_Resultados_P2,Msg_L2
+                BClr Banderas_2,LCD_OK
+                Movw #TCorrer_Est8,EstPres_TCorrer
+FIN_TCorrer_6   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 7 ==========================
 
 TCorrer_Est7:
-FIN_TCorrer_7
+                Tst TimerError
+                Bne FIN_TCorrer_7
+                Movw #TCorrer_Est3,EstPres_TCorrer
+FIN_TCorrer_7   Rts
+
+;========================= TAREA MODO CORRER ESTADO 8 ==========================
+
+TCorrer_Est8:
+
+FIN_TCorrer_8  Rts
 
 ;*******************************************************************************
 ;                                  TAREA BRILLO
