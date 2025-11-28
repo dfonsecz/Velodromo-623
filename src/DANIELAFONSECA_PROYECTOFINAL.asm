@@ -27,9 +27,9 @@ tSupRebPB1:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
 tSupRebPB2:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
 tSupRebTCL:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (Teclado)
 tShortP1:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP1:          EQU 3      ; Tiempo minimo LongPress en segundos
+tLongP1:          EQU 2      ; Tiempo minimo LongPress en segundos
 tShortP2:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP2:          EQU 3      ; Tiempo minimo LongPress en segundos
+tLongP2:          EQU 2      ; Tiempo minimo LongPress en segundos
 tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 tTimerDigito:     EQU 2
 tTimerBrillo:     EQU 4
@@ -362,6 +362,8 @@ Fin_Base1S:      dB $FF
         ; Pantalla LCD
         Clr Banderas_1
         Clr LEDS
+        Clr Vueltas
+        Clr AcumVelocidad
 
         ; Teclado
         Movb #$FF,Tecla
@@ -562,6 +564,7 @@ FIN_TCorrer_4   Rts
 
 TCorrer_Est5:
                 BrClr Banderas_1,ShortP2,Bra_To_Fin
+                BClr Banderas_1,ShortP2
                 Jsr Calcula
                 Ldaa Velocidad
                 Cmpa #VMin
@@ -607,8 +610,13 @@ TCorrer_Est6:
                 Tst TimerIniPant
                 Bne FIN_TCorrer_6
                 Inc Vueltas
-                ;Movb Vueltas,AcumVueltas
-                Movb Velocidad,BCD2
+                Ldd AcumVelocidad
+                Addb Velocidad
+                Adca #0
+                Std AcumVelocidad
+                Ldaa Velocidad
+                Jsr BIN_BCD_MUXP
+                Movb BCD,BCD2
                 Movb Vueltas,BCD1
                 Jsr BCD_7Seg
                 Movw #Msg_Resultados_P1,Msg_L1
@@ -630,7 +638,8 @@ FIN_TCorrer_7   Rts
 TCorrer_Est8:
                Tst TimerFinPant
                Bne FIN_TCorrer_8
-               Ldaa NumVueltas
+               Ldaa Vueltas
+               Bne PasarA_TC_3
                BClr Banderas_1,LongP2
                Movw #Msg_Fin_Ciclo_P1,Msg_L1
                Movw #Msg_Fin_Ciclo_P2,Msg_L2
