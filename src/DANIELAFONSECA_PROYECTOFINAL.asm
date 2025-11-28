@@ -576,7 +576,8 @@ TCorrer_Est5:
                 Movb BCD,BCD2
                 Ldaa TimerFinPant
                 Jsr BIN_BCD_MUXP
-                Movb BCD,BCD2
+                Movb BCD,BCD1
+                Jsr BCD_7Seg
                 Movw #TCorrer_Est6,EstPres_TCorrer
 Bra_To_Fin      Bra FIN_TCorrer_5
 Fuera_Rango     Movw #Msg_Alerta_Vel_P1,Msg_L1
@@ -742,16 +743,21 @@ Calcula:
                 Tfr X,D
                 Ldx #36
                 Idiv                              ; (DeltaP)*100/((Velocidad)*36)
-                Stx TimerIniPant                  ; TimerIniPant = lo de arriba
+                Tfr X,A
+                Staa TimerIniPant                 ; TimerIniPant = lo de arriba
                 Ldaa #DeltaP                      ; DeltaP = 250 mts
                 Ldab #100
                 Mul                               ; (DeltaP)*100
-                Ldx Velocidad
-                Idiv                              ; (DeltaP)*100/(Velocidad)
+                Pshd
+		Ldaa Velocidad
+                Tfr A,X
+                Puld
+		Idiv                              ; (DeltaP)*100/(Velocidad)
                 Tfr X,D
                 Ldx #36
                 Idiv                              ; (DeltaP)*100/((Velocidad)*36)
-                Stx TimerFinPant                  ; TimerFinPant = lo de arriba
+                Tfr X,A
+                Staa TimerFinPant                 ; TimerFinPant = lo de arriba
                 Rts
 
 
