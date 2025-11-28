@@ -364,6 +364,9 @@ Fin_Base1S:      dB $FF
         Clr LEDS
         Clr Vueltas
         Clr AcumVelocidad
+        Clr 1,AcumVelocidad
+        Clr Velocidad
+        Clr NumVueltas
 
         ; Teclado
         Movb #$FF,Tecla
@@ -423,6 +426,7 @@ NoNewMsg        Jsr Decre_TablaTimers
                 Jsr Tarea_Modo_Espera
                 Jsr Tarea_Configurar
                 Jsr Tarea_Correr
+                Jsr Tarea_Resumen
                 Jsr Tarea_Led_Testigo
                 Jsr Tarea_PantallaMUX
                 Jsr Tarea_LeerPB1
@@ -657,16 +661,25 @@ Tarea_Resumen:
                Ldaa Funcion
                Cmpa #F4
                Bne FIN_Resumen
+               Movb #$08,LEDS
+               Tst Vueltas
+               Beq Entrada_Es_0
                Ldd AcumVelocidad
-               Ldx NumVueltas
+               Ldx Vueltas
                Idiv
                Tfr X,A
-               Staa BCD2
-               Movb NumVueltas,BCD1
+Call_BIN_BCD   Jsr BIN_BCD_MUXP
+               Movb BCD,BCD2
+               Ldaa Vueltas
+               Jsr BIN_BCD_MUXP
+               Movb BCD,BCD1
                Jsr BCD_7Seg
                Movw #Msg_Resumen_P1,Msg_L1
                Movw #Msg_Resumen_P2,Msg_L2
                BClr Banderas_2,LCD_OK
+               Bra FIN_Resumen
+Entrada_Es_0   Ldaa #$00
+               Bra Call_BIN_BCD
 FIN_Resumen    Rts
 
 ;*******************************************************************************
