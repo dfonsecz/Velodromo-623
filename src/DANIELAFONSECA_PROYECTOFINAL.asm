@@ -443,9 +443,6 @@ Fin_Base1S:      dB $FF
 ;===============================================================================
 
 Init_LCD        ; Inicializacion de Pantalla LCD (otros)
-                ;Movw #Msg_Modo_Espera_P1,Msg_L1
-                ;Movw #Msg_Modo_Espera_P2,Msg_L2
-                ;BClr Banderas_2,LCD_OK
                 Movb #$FF,DDRK                    ; Inicializar como salida
                 Movw #IniDsp,Punt_LCD             ; Cargar direccion de comandos
                 BClr Banderas_2,RS                ; Inicializar banderas en 0
@@ -541,12 +538,11 @@ FIN_TConfig_1   Rts
 ;======================= TAREA MODO CONFIGURAR ESTADO 2 ========================
 
 TConfig_Est2:
-                Ldaa Funcion
                 BrClr Banderas_1,ArrayOK,FIN_TConfig_2
                 Jsr BCD_BIN
                 Ldaa ValorNumVueltas
                 Cmpa #MinNumVueltas
-                Bcs BorrarNumArr_TC
+                Blo BorrarNumArr_TC
                 Cmpa #MaxNumVueltas
                 Bhi BorrarNumArr_TC
                 Ldaa ValorNumVueltas
@@ -591,10 +587,10 @@ FIN_TCorrer_1   Rts
 
 TCorrer_Est2:
                 BrClr Banderas_1,LongP2,FIN_TCorrer_2 ; Se activó botón de inicio?
-                BClr PortRele,Rele                ; Apagar relé
                 Ldaa Vueltas                      ; Si se alcanzó NumVueltas,
                 Cmpa NumVueltas                   ; limpiar Vueltas al empezar
                 Beq Reset_Vueltas                 ; nuevo ciclo
+                BClr PortRele,Rele                ; Apagar relé
                 Clr DeltaT                        ; Borrar variables relaciona-
                 Clr Velocidad                     ; das con la subrutina
                 Clr TimerIniPant                  ; Calcula
@@ -621,7 +617,6 @@ FIN_TCorrer_3   Rts
 
 TCorrer_Est4:
                 BrClr Banderas_1,ShortP1,FIN_TCorrer_4 ; Se activó S1 (PH3)?
-                BClr Banderas_1,ShortP1
                 Movb #tTimerCal,TimerCal          ; Cargar timer de calculo
                 BClr Banderas_1,ShortP1           ; Borrar bandera de Short Press
                 Movw #Msg_Espera_S2_P1,Msg_L1     ; Se envia Mensaje Esperando
@@ -641,44 +636,44 @@ TCorrer_Est5:
                 Blo Fuera_Rango                   ; De ser asi, sale de rango
                 Cmpa #VMax                        ; Velocidad > 90 km/h ?
                 Bhi Fuera_Rango                   ; De ser asi, sale de rango
-                Movw #Msg_TimerPant_P1,Msg_L1     ;
-                Movw #Msg_TimerPant_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
-                Clra
-                Ldab TimerIniPant
+                Movw #Msg_TimerPant_P1,Msg_L1     ; Se envia Mensaje TimerPant
+                Movw #Msg_TimerPant_P2,Msg_L2     ; a la pantalla LCD
+                BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
+                Clra                              ; Obtener valor de Timer
+                Ldab TimerIniPant                 ; IniPant en segundos
                 Ldx #10
-                Idiv
+                Idiv                              ; TimerIniPant/10
                 Tfr X,A
                 Jsr BIN_BCD_MUXP
-                Movb BCD,BCD2
-                Clra
-                Ldab TimerFinPant
-                Subb TimerIniPant
+                Movb BCD,BCD2                     ; Mostrar en Dsp1 y Dsp2
+                Clra                              ; Obtener valor de Timer
+                Ldab TimerFinPant                 ; FinPant en segundos
+                Subb TimerIniPant                 ; Restar TimerIniPant
                 Ldx #10
-                Idiv
+                Idiv                              ; TimerFinPant/10
                 Tfr X,A
                 Jsr BIN_BCD_MUXP
-                Movb BCD,BCD1
+                Movb BCD,BCD1                     ; Mostrar en Dsp3 y Dsp4
                 Jsr BCD_7Seg
                 Movw #TCorrer_Est6,EstPres_TCorrer
 Bra_To_Fin      Bra FIN_TCorrer_5
-Fuera_Rango     Movw #Msg_Alerta_Vel_P1,Msg_L1
-                Movw #Msg_Alerta_Vel_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
-                Ldaa Velocidad
-                Cmpa #99
-                Bhi Poner_Guion
-                Ldaa Velocidad
-                Jsr BIN_BCD_MUXP
+Fuera_Rango     Movw #Msg_Alerta_Vel_P1,Msg_L1    ; Se envia Mensaje Alerta
+                Movw #Msg_Alerta_Vel_P2,Msg_L2    ; a la pantalla LCD
+                BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
+                Ldaa Velocidad                    ; La velocidad es mayor a
+                Cmpa #99                          ; 99 km/h?
+                Bhi Poner_Guion                   ; Si lo es, mostrar guiones
+                Ldaa Velocidad                    ; Sino, mostrar Velocidad en
+                Jsr BIN_BCD_MUXP                  ; Dsp1 y Dsp2
                 Movb BCD,BCD2
-                Movb #OFF,BCD1
+                Movb #OFF,BCD1                    ; Mantener Dsp3 y Dsp4 OFF
                 Bra Borrar_Timers
-Poner_Guion     Movb #Guiones,BCD2
+Poner_Guion     Movb #Guiones,BCD2                ; Cargar guiones
                 Movb #Guiones,BCD1
 Borrar_Timers   Jsr BCD_7Seg
-                Clr TimerIniPant
+                Clr TimerIniPant                  ; Borrar timers
                 Clr TimerFinPant
-                Movb #tTimerError,TimerError
+                Movb #tTimerError,TimerError      ; Cargar timer error
                 Movw #TCorrer_Est7,EstPres_TCorrer
 FIN_TCorrer_5   Rts
 
