@@ -494,7 +494,7 @@ Tarea_Modo_Espera
                 Ldaa Funcion                      ; La funcion actual es Modo
                 Cmpa #F1                          ; Espera?
                 Bne FIN_Modo_Espera
-                Movw #Msg_Modo_Espera_P1,Msg_L1   ; Si es, enviar mensaje de
+                Movw #Msg_Modo_Espera_P1,Msg_L1   ; Si lo es, enviar mensaje de
                 Movw #Msg_Modo_Espera_P2,Msg_L2   ; Modo Espera al LCD
                 BClr Banderas_2,LCD_OK            ; Se borra bandera LCD_OK
                 Movb #OFF,BCD1                    ; Apagar el display de 7 seg
@@ -508,11 +508,11 @@ FIN_Modo_Espera Rts
 ;===============================================================================
 
 Tarea_Configurar:
-                Ldaa Funcion
-                Cmpa #F2
+                Ldaa Funcion                      ; La funcion actual es Modo
+                Cmpa #F2                          ; Configurar ?
                 Bne Rst_TConfig
-                Movb #$02,LEDS
-                Ldx EstPres_TConfig
+                Movb #$02,LEDS                    ; Si lo es, cargar patron
+                Ldx EstPres_TConfig               ; correcto de leds
                 Jsr 0,X
                 Bra FIN_TConfig
 Rst_TConfig     Movw #TConfig_Est1,EstPres_TConfig
@@ -521,17 +521,16 @@ FIN_TConfig     Rts
 ;======================= TAREA MODO CONFIGURAR ESTADO 1 ========================
 
 TConfig_Est1:
-                Ldaa Funcion
-                Movw #Msg_Modo_Config_P1,Msg_L1
-                Movw #Msg_Modo_Config_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
-                Ldaa NumVueltas
-                Jsr BIN_BCD_MUXP
-                Movb #$BB,BCD2
-                Movb BCD,BCD1
-                Jsr BCD_7Seg
-                Jsr Borrar_Num_Array
-                BClr Banderas_1,ArrayOK
+                Movw #Msg_Modo_Config_P1,Msg_L1   ; Enviar Mensaje Modo Confi-
+                Movw #Msg_Modo_Config_P2,Msg_L2   ; gurar al LCD
+                BClr Banderas_2,LCD_OK            ; Se borra bandera LCD_OK
+                Ldaa NumVueltas                   ; Convertir el numero de
+                Jsr BIN_BCD_MUXP                  ; vueltas a BCD
+                Movb #OFF,BCD2                    ; Apagar Dsp1 y Dsp2
+                Movb BCD,BCD1                     ; Cargar num vueltas en Dsp3
+                Jsr BCD_7Seg                      ; y Dsp4
+                Jsr Borrar_Num_Array              ; Borrar array de ingreso del
+                BClr Banderas_1,ArrayOK           ; teclado
                 Movw #TConfig_Est2,EstPres_TConfig
 FIN_TConfig_1   Rts
 
@@ -1233,13 +1232,13 @@ FIN_SendLCD_4   Rts
 ;===============================================================================
 
 BCD_BIN:
-                Ldaa Num_Array
-                Ldab #10
+                Ldaa Num_Array                    ; Multiplicar digito de dece-
+                Ldab #10                          ; nas por 10
                 Mul
-                Ldx #Num_Array
-                Ldaa 1,X
-                Aba
-                Staa ValorNumVueltas
+                Ldx #Num_Array                    ; Cargar direccion de Num_Array
+                Ldaa 1,X                          ; Cargar digito de unidades
+                Aba                               ; Sumar decenas y unidades
+                Staa ValorNumVueltas              ; Guardar resultado de conv
                 Rts
 
 ;===============================================================================
