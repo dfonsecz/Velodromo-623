@@ -1,21 +1,21 @@
-;******************************************************************************
+;===============================================================================
 ;                              PROYECTO FINAL
-;******************************************************************************
+;===============================================================================
 #include registers.inc
 ;
 ; Autora: Daniela Fonseca Zumbado
 ; Version: 1.0
 ; Descripción: Este proyecto implementa un Velódromo
 ;
-;******************************************************************************
+;===============================================================================
 ;                 INICIALIZACION DE VECTOR DE INTERRUPCIONES
-;******************************************************************************
+;===============================================================================
                                 Org $3E4A
                                 dw Maquina_Tiempos
                                 
-;*******************************************************************************
+;===============================================================================
 ;                            DEFINICION DE VALORES
-;*******************************************************************************
+;===============================================================================
 
 ;--- Aqui se colocan los valores de carga para los timers baseT  ----
 
@@ -46,7 +46,7 @@ DeltaS:           EQU 50     ; Distancia entre sensores de 50 m
 DeltaM:           EQU 150    ; Distancia a Inicio de Mensaje de 150 m
 DeltaP:           EQU 250    ; Distancia a pantalla de 250 m
 
-PortRele:         PORTE      ; Puerto al que se encuentra conectado el rele
+PortRele:         EQU PORTE  ; Puerto al que se encuentra conectado el rele
 Rele:             EQU $04    ; Mascara del bit al que esta conectado el rele
 
 VMin:             EQU 35     ; Velocidad minima de 35 km/h
@@ -135,9 +135,9 @@ LD_Blue:          EQU $40
 
 Carga_TC4:
 
-;*******************************************************************************
+;===============================================================================
 ;                   DECLARACION DE LAS ESTRUCTURAS DE DATOS
-;*******************************************************************************
+;===============================================================================
 
 ;--- Estructuras de datos de Tarea Configurar ---
 
@@ -491,16 +491,16 @@ NoNewMsg        Jsr Decre_TablaTimers
 ;===============================================================================
 
 Tarea_Modo_Espera
-                Ldaa Funcion
-                Cmpa #F1
+                Ldaa Funcion                      ; La funcion actual es Modo
+                Cmpa #F1                          ; Espera?
                 Bne FIN_Modo_Espera
-                Movw #Msg_Modo_Espera_P1,Msg_L1
-                Movw #Msg_Modo_Espera_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
-                Movb #$BB,BCD1
-                Movb #$BB,BCD2
+                Movw #Msg_Modo_Espera_P1,Msg_L1   ; Si es, enviar mensaje de
+                Movw #Msg_Modo_Espera_P2,Msg_L2   ; Modo Espera al LCD
+                BClr Banderas_2,LCD_OK            ; Se borra bandera LCD_OK
+                Movb #OFF,BCD1                    ; Apagar el display de 7 seg
+                Movb #OFF,BCD2
                 Jsr BCD_7Seg
-                Movb #$01,LEDS
+                Movb #LDEspera,LEDS               ; Cargar patron correcto a leds
 FIN_Modo_Espera Rts
 
 ;===============================================================================
