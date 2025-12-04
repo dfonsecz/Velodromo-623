@@ -23,55 +23,6 @@ tTimer10mS:       EQU 500    ;Base de tiempo de 10 mS (20uS x 500)
 tTimer100mS:      EQU 5000   ;Base de tiempo de 100 mS (20uS x 5000)
 tTimer1S:         EQU 50000  ;Base de tiempo de 1 segundo (20uS x 50000)
 
-;--- Valores para la Tarea Teclado ---
-
-tSupRebTCL:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (Teclado)
-
-F1:               EQU $EF    ; Mascara para funcion 1 - Modo espera
-F2:               EQU $DF    ; Mascara para funcion 2 - Modo configurar
-F3:               EQU $BF    ; Mascara para funcion 3 - Modo correr
-F4:               EQU $7F    ; Mascara para funcion 4 - Modo resumen
-
-;--- Valores para la Tarea PantallaMUX ---
-
-tTimerDigito:     EQU 2
-
-MaxCountTicks:    EQU 100    ; Cantidad máxima de ticks para los dígitos
-
-DIG1:             EQU $01    ; Dígito 1 de la pantalla MUX
-DIG2:             EQU $02    ; Dígito 2 de la pantalla MUX
-DIG3:             EQU $04    ; Dígito 3 de la pantalla MUX
-DIG4:             EQU $08    ; Dígito 4 de la pantalla MUX
-
-OFF:              EQU $BB    ; Offset de comando de apagado en la tabla Segment
-GUIONES:          EQU $AA    ; Offset de comando de guin en la tabla Segment
-
-;--- Valores para la Tarea LCD ---
-
-tTimer2ms:        EQU 100    ; Tiempo de timer de 2 mS (20uS x 100)
-tTimer40uS:       EQU 2      ; Tiempo de timer de 40 uS (20uS x 2)
-tTimer260uS:      EQU 13     ; Tiempo de timer de 260 uS (20uS x 13)
-
-EOB:              EQU $FF
-
-Clear_Display:    EQU $01
-
-ADD_L1:           EQU $80    ; Direccion de la linea 1 del LCD
-ADD_L2:           EQU $C0    ; Direccion de la linea 2 del LCD
-
-;--- Valores para las tareas Leer PB1 y Leer PB2
-
-PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
-MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
-MaskPB2:          EQU $01    ; Se define el bit 0 del PB en el puerto
-
-tSupRebPB1:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
-tSupRebPB2:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
-tShortP1:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP1:          EQU 2      ; Tiempo minimo LongPress en segundos
-tShortP2:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP2:          EQU 2      ; Tiempo minimo LongPress en segundos
-
 ;--- Valores para la Tarea Espera ---
 
 LDEspera:         EQU $01    ; Mascara para encender LED de Tarea Espera
@@ -104,6 +55,15 @@ VMax:             EQU 90     ; Velocidad maxima de 90 km/h
 
 LDResumen:        EQU $08    ; Mascara para encender LED de Tarea Resumen
 
+;--- Valores para la Tarea Teclado ---
+
+tSupRebTCL:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (Teclado)
+
+F1:               EQU $EF    ; Mascara para funcion 1 - Modo espera
+F2:               EQU $DF    ; Mascara para funcion 2 - Modo configurar
+F3:               EQU $BF    ; Mascara para funcion 3 - Modo correr
+F4:               EQU $7F    ; Mascara para funcion 4 - Modo resumen
+
 ;--- Valores para la Tarea Brillo ---
 
 tTimerBrillo:     EQU 4
@@ -112,6 +72,46 @@ MaskSCF:
 ;--- Valores para la Tarea Led Testigo
 
 tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
+
+;--- Valores para las tareas Leer PB1 y Leer PB2
+
+PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
+MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
+MaskPB2:          EQU $01    ; Se define el bit 0 del PB en el puerto
+
+tSupRebPB1:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
+tSupRebPB2:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
+tShortP1:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
+tLongP1:          EQU 2      ; Tiempo minimo LongPress en segundos
+tShortP2:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
+tLongP2:          EQU 2      ; Tiempo minimo LongPress en segundos
+
+;--- Valores para la Tarea PantallaMUX ---
+
+tTimerDigito:     EQU 2
+
+MaxCountTicks:    EQU 100    ; Cantidad máxima de ticks para los dígitos
+
+DIG1:             EQU $01    ; Dígito 1 de la pantalla MUX
+DIG2:             EQU $02    ; Dígito 2 de la pantalla MUX
+DIG3:             EQU $04    ; Dígito 3 de la pantalla MUX
+DIG4:             EQU $08    ; Dígito 4 de la pantalla MUX
+
+OFF:              EQU $BB    ; Offset de comando de apagado en la tabla Segment
+GUIONES:          EQU $AA    ; Offset de comando de guin en la tabla Segment
+
+;--- Valores para la Tarea LCD ---
+
+tTimer2ms:        EQU 100    ; Tiempo de timer de 2 mS (20uS x 100)
+tTimer40uS:       EQU 2      ; Tiempo de timer de 40 uS (20uS x 2)
+tTimer260uS:      EQU 13     ; Tiempo de timer de 260 uS (20uS x 13)
+
+EOB:              EQU $FF
+
+Clear_Display:    EQU $01
+
+ADD_L1:           EQU $80    ; Direccion de la linea 1 del LCD
+ADD_L2:           EQU $C0    ; Direccion de la linea 2 del LCD
 
 ;--- Banderas ---
 
@@ -138,6 +138,24 @@ Carga_TC4:
 ;                   DECLARACION DE LAS ESTRUCTURAS DE DATOS
 ;*******************************************************************************
 
+;--- Estructuras de datos de Tarea Configurar ---
+
+EstPres_TConfig:  ds 2       ; Variable para guardar el estado de Tarea Config
+ValorNumVueltas:  ds 1       ; Variable temporal para el numero de vueltas
+NumVueltas:       ds 1       ; Variable final para el numero de vueltas
+
+;--- Estructuras de datos de Tarea Correr ---
+
+EstPres_TCorrer:  ds 2       ; Variable para guardar el estado de Tarea Correr
+DeltaT:           ds 1
+Velocidad:        ds 1
+AcumVelocidad:    ds 2
+Vueltas:          ds 1
+
+;--- Estructuras de datos de Tarea Brillo ---
+
+EstPres_TBrillo:  ds 2       ; Variable para guardar el estado de Tarea Brillo
+
 ;--- Estructuras de datos de Tarea Teclado ---
                   ORG $1000
 MAX_TCL:          db $05     ; Limite maximo del tamano de Num_Array
@@ -153,6 +171,16 @@ EstPres_TCL:      ds 2       ; Variable para direccion de estado de maquina de
                   ORG $1010
 Num_Array:        ds 5       ; Array donde guardar valores ingresados por el
                              ; teclado
+                             
+;--- Estructuras de datos de Tarea Led Testigo ---
+
+EstPres_LDTst:    ds 2       ; Variable para guardar el estado de Tarea Led
+                             ; Testigo
+                             
+;--- Estructuras de datos de Tarea Leer PB1 y Leer PB2 ---
+
+EstPres_LeerPB1:  ds 2       ; Variable para guardar estado de Leer PB1
+EstPres_LeerPB2:  ds 2       ; Variable para guardar estado de Leer PB2
 
 ;--- Estructuras de datos de Tarea PantallaMUX ---
 
@@ -163,7 +191,7 @@ DSP1:             ds 1
 DSP2:             ds 1
 DSP3:             ds 1
 DSP4:             ds 1
-LEDS:             ds 1
+LEDS:             ds 1       ; Variable para almacenar el estado de los leds
 Cont_Dig:         ds 1
 Brillo:           ds 1
 
@@ -187,34 +215,6 @@ Msg_L1:           ds 2       ; Puntero a mensaje para la primera linea de LCD
 Msg_L2:           ds 2       ; Puntero a mensaje para la segunda linea de LCD
 EstPres_SendLCD:  ds 2       ; Variable para guardar estado de Tarea Send LCD
 EstPres_TareaLCD: ds 2       ; Variable para guardar estado de Tarea LCD
-
-;--- Estructuras de datos de Tarea LCD ---
-
-EstPres_LeerPB1:  ds 2       ; Variable para guardar estado de Leer PB1
-EstPres_LeerPB2:  ds 2       ; Variable para guardar estado de Leer PB2
-
-;--- Estructuras de datos de Tarea Configurar ---
-
-EstPres_TConfig:  ds 2       ; Variable para guardar el estado de Tarea Config
-ValorNumVueltas:  ds 1       ; Variable temporal para el numero de vueltas
-NumVueltas:       ds 1       ; Variable final para el numero de vueltas
-
-;--- Estructuras de datos de Tarea Correr ---
-
-EstPres_TCorrer:  ds 2       ; Variable para guardar el estado de Tarea Correr
-DeltaT:           ds 1
-Velocidad:        ds 1
-AcumVelocidad:    ds 2
-Vueltas:          ds 1
-
-;--- Estructuras de datos de Tarea Brillo ---
-
-EstPres_TBrillo:  ds 2       ; Variable para guardar el estado de Tarea Brillo
-
-;--- Estructuras de datos de Tarea Led Testigo ---
-
-EstPres_LDTst:    ds 2       ; Variable para guardar el estado de Tarea Led
-                             ; Testigo
 
 ;--- Banderas ---
 
@@ -251,9 +251,7 @@ Teclas:           db $01,$02,$03        ; 1, 2, 3
                   db $07,$08,$09        ; 7, 8, 9
                   db $0B,$00,$0E        ; B, 0, E
 
-;================================== MENSAJES ===================================
-
-; Mensajes de la aplicacion
+;--- Mensajes de la aplicacion ---
                       ORG $1200
 Msg_Modo_Espera_P1:   fcc "*VELODROMO  623*"
                       db $FF
