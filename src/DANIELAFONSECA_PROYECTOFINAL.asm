@@ -568,7 +568,8 @@ Tarea_Correr:
                 Ldx EstPres_TCorrer
                 Jsr 0,X
                 Bra FIN_TCorrer
-Rst_TCorrer     Movw #TCorrer_Est1,EstPres_TCorrer
+Rst_TCorrer     BClr PortRele,Rele
+		Movw #TCorrer_Est1,EstPres_TCorrer
 FIN_TCorrer     Rts
 
 ;========================= TAREA MODO CORRER ESTADO 1 ==========================
@@ -589,6 +590,7 @@ FIN_TCorrer_1   Rts
 TCorrer_Est2:
                 BrClr Banderas_1,LongP2,FIN_TCorrer_2 ; Se activó botón de inicio?
                 BClr PortRele,Rele                ; Apagar relé
+                Clr Vueltas
                 Clr DeltaT                        ; Borrar variables relaciona-
                 Clr Velocidad                     ; das con la subrutina
                 Clr TimerIniPant                  ; Calcula
@@ -656,8 +658,8 @@ Fuera_Rango     Movw #Msg_Alerta_Vel_P1,Msg_L1
                 Movb BCD,BCD2
                 Movb #OFF,BCD1
                 Bra Borrar_Timers
-Poner_Guion     Movb #$AA,BCD2
-                Movb #$AA,BCD1
+Poner_Guion     Movb #Guiones,BCD2
+                Movb #Guiones,BCD1
 Borrar_Timers   Jsr BCD_7Seg
                 Clr TimerIniPant
                 Clr TimerFinPant
@@ -700,6 +702,7 @@ TCorrer_Est8:
                Tst TimerFinPant
                Bne FIN_TCorrer_8
                Ldaa Vueltas
+               Cmpa NumVueltas
                Bne PasarA_TC_3
                BSet PortRele,Rele
                BClr Banderas_1,LongP2
