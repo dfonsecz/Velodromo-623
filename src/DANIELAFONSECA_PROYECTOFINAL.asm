@@ -682,15 +682,15 @@ FIN_TCorrer_5   Rts
 TCorrer_Est6:
                 Tst TimerIniPant
                 Bne FIN_TCorrer_6
-                Inc Vueltas
+                Inc Vueltas                       ; Incrementar vueltas
                 Ldd AcumVelocidad
-                Addb Velocidad
-                Adca #0
-                Std AcumVelocidad
-                Ldaa Velocidad
-                Jsr BIN_BCD_MUXP
-                Movb BCD,BCD2
-                Ldaa Vueltas
+                Addb Velocidad                    ; Sumar velocidad a acumulado
+                Adca #0                           ; Sumar carry
+                Std AcumVelocidad                 ; Guardar de nuevo
+                Ldaa Velocidad                    ; Convertir velocidad a BCD
+                Jsr BIN_BCD_MUXP                  ; Mostrar velocidad en Dsp1
+                Movb BCD,BCD2                     ; y Dsp2
+                Ldaa Vueltas                      ;
                 Jsr BIN_BCD_MUXP
                 Movb BCD,BCD1
                 Jsr BCD_7Seg
