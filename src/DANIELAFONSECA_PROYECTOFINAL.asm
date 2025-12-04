@@ -219,16 +219,17 @@ EstPres_LDTst:    ds 2       ; Variable para guardar el estado de Tarea Led
 ;--- Banderas ---
 
                   ORG $1070
-Banderas_1:       ds 1
-Banderas_2:       ds 1
+Banderas_1:       ds 1       ; Variable de banderas para botones y Array OK
+Banderas_2:       ds 1       ; Variable de banderas para comandos LCD
 
 ;--- Estructuras de datos generales ---
 
                   ORG $1080
 LED_Testigo:      ds 1
 
-;==================================== TABLAS ===================================
+;--- Tablas ---
 
+; Patrones de segmentos a mostrar en display de 7 segmentos
                   ORG $1100
 Segment:          db $3F                ; 0
                   db $06                ; 1
@@ -252,6 +253,7 @@ Teclas:           db $01,$02,$03        ; 1, 2, 3
 
 ;================================== MENSAJES ===================================
 
+; Mensajes de la aplicacion
                       ORG $1200
 Msg_Modo_Espera_P1:   fcc "*VELODROMO  623*"
                       db $FF
