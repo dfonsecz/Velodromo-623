@@ -428,6 +428,8 @@ Fin_Base1S:      dB $FF
 
         Movb #$00,Patron
         Movb #F1,Funcion
+        
+        Movb #10,NumVueltas
 
         Lds #$3BFF
         Cli
@@ -569,7 +571,7 @@ Tarea_Correr:
                 Jsr 0,X
                 Bra FIN_TCorrer
 Rst_TCorrer     BClr PortRele,Rele
-		Movw #TCorrer_Est1,EstPres_TCorrer
+                Movw #TCorrer_Est1,EstPres_TCorrer
 FIN_TCorrer     Rts
 
 ;========================= TAREA MODO CORRER ESTADO 1 ==========================
@@ -590,13 +592,17 @@ FIN_TCorrer_1   Rts
 TCorrer_Est2:
                 BrClr Banderas_1,LongP2,FIN_TCorrer_2 ; Se activó botón de inicio?
                 BClr PortRele,Rele                ; Apagar relé
-                Clr Vueltas
+                Ldaa Vueltas                      ; Si se alcanzó NumVueltas,
+                Cmpa NumVueltas                   ; limpiar Vueltas al empezar
+                Beq Reset_Vueltas                 ; nuevo ciclo
                 Clr DeltaT                        ; Borrar variables relaciona-
                 Clr Velocidad                     ; das con la subrutina
                 Clr TimerIniPant                  ; Calcula
                 Clr TimerFinPant
                 BClr Banderas_1,ShortP2           ; Borrar bandera de Short Press
                 Movw #TCorrer_Est3,EstPres_TCorrer
+                Bra FIN_TCorrer_2
+Reset_Vueltas   Clr Vueltas
 FIN_TCorrer_2   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 3 ==========================
@@ -605,8 +611,8 @@ TCorrer_Est3:
                 Movw #Msg_Espera_S1_P1,Msg_L1     ; Se envia Mensaje Esperando
                 Movw #Msg_Espera_S1_P2,Msg_L2     ; S1 a la pantalla LCD
                 BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
-                Movb #$BB,BCD2                    ; Apagar display de 7 seg
-                Movb #$BB,BCD1
+                Movb #OFF,BCD2                    ; Apagar display de 7 seg
+                Movb #OFF,BCD1
                 Jsr BCD_7Seg
                 Movw #TCorrer_Est4,EstPres_TCorrer
 FIN_TCorrer_3   Rts
@@ -638,10 +644,19 @@ TCorrer_Est5:
                 Movw #Msg_TimerPant_P1,Msg_L1     ;
                 Movw #Msg_TimerPant_P2,Msg_L2
                 BClr Banderas_2,LCD_OK
-                Ldaa TimerIniPant
+                Clra
+                Ldab TimerIniPant
+                Ldx #10
+                Idiv
+                Tfr X,A
                 Jsr BIN_BCD_MUXP
                 Movb BCD,BCD2
-                Ldaa TimerFinPant
+                Clra
+                Ldab TimerFinPant
+                Subb TimerIniPant
+                Ldx #10
+                Idiv
+                Tfr X,A
                 Jsr BIN_BCD_MUXP
                 Movb BCD,BCD1
                 Jsr BCD_7Seg
@@ -680,7 +695,9 @@ TCorrer_Est6:
                 Ldaa Velocidad
                 Jsr BIN_BCD_MUXP
                 Movb BCD,BCD2
-                Movb Vueltas,BCD1
+                Ldaa Vueltas
+                Jsr BIN_BCD_MUXP
+                Movb BCD,BCD1
                 Jsr BCD_7Seg
                 Movw #Msg_Resultados_P1,Msg_L1
                 Movw #Msg_Resultados_P2,Msg_L2
@@ -722,7 +739,7 @@ Tarea_Resumen:
                Ldaa Funcion
                Cmpa #F4
                Bne FIN_Resumen
-               Movb #$08,LEDS
+               Movb #LDResumen,LEDS
                Tst Vueltas
                Beq Entrada_Es_0
                Ldaa Vueltas
@@ -738,7 +755,7 @@ Call_BIN_BCD   Jsr BIN_BCD_MUXP
                Jsr BCD_7Seg
                Movw #Msg_Resumen_P1,Msg_L1
                Movw #Msg_Resumen_P2,Msg_L2
-               BClr Banderas_2,LCD_OK
+               BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
                Bra FIN_Resumen
 Entrada_Es_0   Ldaa #$00
                Bra Call_BIN_BCD
@@ -1251,53 +1268,61 @@ BCD_BIN:
 ;===============================================================================
 ;                               SUBRUTINA CALCULA
 ;===============================================================================
+;
+; Descripcion: Esta subrutina realiza los cálculos de DeltaT (tiempo que tarda
+; el ciclista en pasar del sensor S1 y sensor S2), Velocidad (basada en la dis-
+; tancia entre S1 y S2, y DeltaT), TimerIniPant (tiempo para alcanzar la posi-
+; ción de Inicio de Mensaje) y TimerFinPant (tiempo para alcanzar la posición
+; de la pantalla)
+;
+; Ecuaciones:
+; DeltaT 	=  tTimerCal-TimerCal		[ticks]
+; Velocidad 	= (DeltaS/DeltaT)*36    	[km/h]
+; TimerIniPant  = (DeltaM/Velocidad)*36         [ticks]
+; TimerFinPant  = (DeltaP/Velocidad)*36         [ticks]
 
 Calcula:
+                ; Calculo de DeltaT
                 Ldd #tTimerCal                    ; tTimerCal=100
                 Subb TimerCal                     ; tTimerCal-(tTimerCal)
-                Ldx #10                           ; Pasar a cantidad de ticks
-                Idiv
-                Tfr X,A                           ; Mover parte baja a A
-                Staa DeltaT
-                Ldaa #DeltaS                      ; DeltaS=50 mts
+                Stab DeltaT
+                
+                ; Calculo de Velocidad
+                Ldaa #DeltaS                      ; DeltaS = 50 mts
                 Ldab #36
                 Mul                               ; (DeltaS)*36
-                Pshd
+                Pshd                              ; Guardar (DeltaS)*36 en pila
                 Ldaa DeltaT                       ; Paso DeltaT calculado a X
                 Tfr A,X
-                Puld
+                Puld                              ; Traer (DeltaS)*36 de la pila
                 Idiv                              ; (DeltaS)*36/DeltaT
-                Tfr X,D
-                Ldx #10
-                Idiv                              ; (DeltaS)*36/(DeltaT*10)
                 Tfr X,A
-                Staa Velocidad                    ; Velocidad=(DeltaS)*36/(DeltaT*10)
+                Staa Velocidad                    ; Velocidad=(DeltaS)*36/(DeltaT)
+                
+                ; Calculo de TimerIniPant
                 Ldaa #DeltaM                      ; DeltaM = 150 mts
-                Ldab #100
-                Mul                               ; (DeltaM)*100
-                Pshd
-                Ldaa Velocidad
+                Ldab #36
+                Mul                               ; (DeltaM)*36
+                Pshd                              ; Guardar (DeltaM)*36 en pila
+                Ldaa Velocidad                    ; Paso Velocidad calculada a X
                 Tfr A,X
-                Puld
-                Idiv                              ; (DeltaM)*100/(Velocidad)
-                Tfr X,D
-                Ldx #36
-                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
+                Puld                              ; Traer (DeltaM)*36 de la pila
+                Idiv                              ; (DeltaM)*36/(DeltaT)
                 Tfr X,A
-                Staa TimerIniPant                 ; TimerIniPant = lo de arriba
-                Ldaa #DeltaP                      ; DeltaP = 250 mts
-                Ldab #100
-                Mul                               ; (DeltaP)*100
-                Pshd
-                Ldaa Velocidad
+                Staa TimerIniPant
+                
+                ; Calculo de TimerFinPant
+                Ldaa #DeltaP                      ; DeltaM = 250 mts
+                Ldab #36
+                Mul                               ; (DeltaP)*36
+                Pshd                              ; Guardar (DeltaP)*36 en pila
+                Ldaa Velocidad                    ; Paso Velocidad calculada a X
                 Tfr A,X
-                Puld
-                Idiv                              ; (DeltaP)*100/(Velocidad)
-                Tfr X,D
-                Ldx #36
-                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
+                Puld                              ; Traer (DeltaP)*36 de la pila
+                Idiv                              ; (DeltaP)*36/(DeltaT)
                 Tfr X,A
-                Staa TimerFinPant                 ; TimerFinPant = lo de arriba
+                Staa TimerFinPant
+                
                 Rts
                 
 ;===============================================================================
