@@ -115,15 +115,12 @@ tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
 
 ;--- Banderas ---
 
-                  ORG $1070
-Banderas_1:       ds 1
 ShortP1:          EQU $01    ; Bandera de pulso corto en boton PB1
 LongP1:           EQU $02    ; Bandera de pulso largo en boton PB1
 ShortP2:          EQU $04    ; Bandera de pulso corto en boton PB2
 LongP2:           EQU $08    ; Bandera de pulso largo en boton PB2
 ArrayOK:          EQU $10    ; Bandera de que array se lleno correctamente
 
-Banderas_2:       ds 1
 RS:               EQU $01
 LCD_OK:           EQU $02
 FinSendLCD:       EQU $04
@@ -141,10 +138,8 @@ Carga_TC4:
 ;                   DECLARACION DE LAS ESTRUCTURAS DE DATOS
 ;*******************************************************************************
 
-;=============================== TAREA TECLADO =================================
-
+;--- Estructuras de datos de Tarea Teclado ---
                   ORG $1000
-
 MAX_TCL:          db $05     ; Limite maximo del tamano de Num_Array
 Tecla:            ds 1       ; Variable para guardar la tecla actual
 Tecla_IN:         ds 1       ; Variable para guardar la tecla ingresada
@@ -155,12 +150,11 @@ Funcion:          ds 1       ; Variable para guardar patron a escribir en LEDs
 EstPres_TCL:      ds 2       ; Variable para direccion de estado de maquina de
                              ; estados Tarea_Teclado
 
-; Arreglo de teclas presionadas
                   ORG $1010
 Num_Array:        ds 5       ; Array donde guardar valores ingresados por el
                              ; teclado
 
-;============================ TAREA PANTALLA MUX ===============================
+;--- Estructuras de datos de Tarea PantallaMUX ---
 
                           ORG $1020
 EstPres_PantallaMUX:    ds 2 ; Variable para guardar estado de tarea de pantalla
@@ -173,14 +167,14 @@ LEDS:             ds 1
 Cont_Dig:         ds 1
 Brillo:           ds 1
 
-;================== VARIABLES PARA SUBRUTINAS DE CONVERSION ====================
+;--- Estructuras de datos de subrutinas de Conversion ---
 
 BCD:              ds 1
 Cont_BCD:         ds 1
 BCD1:             ds 1
 BCD2:             ds 1
 
-;================================== TAREA LCD ==================================
+;--- Estructuras de datos de Tarea LCD ---
 
 IniDsp:           db $28     ; Function Set
                   db $28     ; Function Set
@@ -194,18 +188,18 @@ Msg_L2:           ds 2       ; Puntero a mensaje para la segunda linea de LCD
 EstPres_SendLCD:  ds 2       ; Variable para guardar estado de Tarea Send LCD
 EstPres_TareaLCD: ds 2       ; Variable para guardar estado de Tarea LCD
 
-;================================ TAREAS LEER PB ===============================
+;--- Estructuras de datos de Tarea LCD ---
 
 EstPres_LeerPB1:  ds 2       ; Variable para guardar estado de Leer PB1
 EstPres_LeerPB2:  ds 2       ; Variable para guardar estado de Leer PB2
 
-;=============================== TAREA CONFIGURAR ==============================
+;--- Estructuras de datos de Tarea Configurar ---
 
 EstPres_TConfig:  ds 2       ; Variable para guardar el estado de Tarea Config
 ValorNumVueltas:  ds 1       ; Variable temporal para el numero de vueltas
 NumVueltas:       ds 1       ; Variable final para el numero de vueltas
 
-;================================= TAREA CORRER ================================
+;--- Estructuras de datos de Tarea Correr ---
 
 EstPres_TCorrer:  ds 2       ; Variable para guardar el estado de Tarea Correr
 DeltaT:           ds 1
@@ -213,16 +207,22 @@ Velocidad:        ds 1
 AcumVelocidad:    ds 2
 Vueltas:          ds 1
 
-;================================= TAREA BRILLO ================================
+;--- Estructuras de datos de Tarea Brillo ---
 
 EstPres_TBrillo:  ds 2       ; Variable para guardar el estado de Tarea Brillo
 
-;============================== TAREA LED TESTIGO ==============================
+;--- Estructuras de datos de Tarea Led Testigo ---
 
 EstPres_LDTst:    ds 2       ; Variable para guardar el estado de Tarea Led
                              ; Testigo
 
-;================================== GENERALES ==================================
+;--- Banderas ---
+
+                  ORG $1070
+Banderas_1:       ds 1
+Banderas_2:       ds 1
+
+;--- Estructuras de datos generales ---
 
                   ORG $1080
 LED_Testigo:      ds 1
