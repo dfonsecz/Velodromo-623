@@ -785,141 +785,121 @@ EscribirBrillo  Staa Brillo                       ; Si es menor a 100, escribir
 Brillo_Est1     Movw #TareaBrillo_Est1,EstPres_TBrillo ; ese valor a Brillo
 FIN_TBrillo_3   Rts
 
-;*******************************************************************************
-;                               SUBRUTINA CALCULA
-;*******************************************************************************
+;******************************************************************************
+;                               TAREA TECLADO
+;******************************************************************************
 
-Calcula:
-                Ldd #tTimerCal                    ; tTimerCal=100
-                Subb TimerCal                     ; tTimerCal-(tTimerCal)
-                Ldx #10                           ; Pasar a cantidad de ticks
-                Idiv
-                Tfr X,A                           ; Mover parte baja a A
-                Staa DeltaT
-                Ldaa #DeltaS                      ; DeltaS=50 mts
-                Ldab #36
-                Mul                               ; (DeltaS)*36
-                Pshd
-                Ldaa DeltaT                       ; Paso DeltaT calculado a X
-                Tfr A,X
-                Puld
-                Idiv                              ; (DeltaS)*36/DeltaT
-                Tfr X,D
-                Ldx #10
-                Idiv                              ; (DeltaS)*36/(DeltaT*10)
-                Tfr X,A
-                Staa Velocidad                    ; Velocidad=(DeltaS)*36/(DeltaT*10)
-                Ldaa #DeltaM                      ; DeltaM = 150 mts
-                Ldab #100
-                Mul                               ; (DeltaM)*100
-                Pshd
-                Ldaa Velocidad
-                Tfr A,X
-                Puld
-                Idiv                              ; (DeltaM)*100/(Velocidad)
-                Tfr X,D
-                Ldx #36
-                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
-                Tfr X,A
-                Staa TimerIniPant                 ; TimerIniPant = lo de arriba
-                Ldaa #DeltaP                      ; DeltaP = 250 mts
-                Ldab #100
-                Mul                               ; (DeltaP)*100
-                Pshd
-                Ldaa Velocidad
-                Tfr A,X
-                Puld
-                Idiv                              ; (DeltaP)*100/(Velocidad)
-                Tfr X,D
-                Ldx #36
-                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
-                Tfr X,A
-                Staa TimerFinPant                 ; TimerFinPant = lo de arriba
+Tarea_Teclado   Ldx EstPres_TCL
+                Jsr 0,X
                 Rts
 
+;============================= TECLADO ESTADO 1 ================================
 
-;*******************************************************************************
-;                               SUBRUTINA BCD_BIN
-;*******************************************************************************
+Teclado_Est1    Jsr Leer_Teclado                  ; Si se presiona alguna tecla
+                Ldaa Tecla
+                Cmpa #$FF
+                Beq FIN_Tecl_Est1
+                Movb #tSupRebTCL,Timer_RebTCL     ; carga timer de supresion de
+                Movw #Teclado_Est2,EstPres_TCL   ; rebotes y siguiente estado
+FIN_Tecl_Est1   Rts
 
-BCD_BIN:
-                Ldaa Num_Array
-                Ldab #10
-                Mul
+;============================= TECLADO ESTADO 2 ================================
+
+Teclado_Est2    Tst Timer_RebTCL                  ; Si no se agota el timer,
+                Bne FIN_Tecl_Est2                 ; verifica si Tecla = Tecla_IN
+                Movb Tecla,Tecla_IN
+                Jsr Leer_Teclado
+                Ldaa Tecla_IN
+                Cmpa Tecla
+                Bne Regr_Tecl_Est1
+                Movw #Teclado_Est3,EstPres_TCL   ; Si son iguales pasa a est 3
+                Bra FIN_Tecl_Est2
+Regr_Tecl_Est1  Movw #Teclado_Est1,EstPres_TCL   ; Sino se devuelve al 1
+FIN_Tecl_Est2   Rts
+;============================= TECLADO ESTADO 3 ================================
+
+Teclado_Est3    Jsr Leer_Teclado
+                Ldaa Tecla
+                Cmpa #$FF
+                Bne FIN_Tecl_Est3
+                Ldaa Tecla_IN                     ; Si la tecla ingresada es de
+                Cmpa #15                          ; funcion, la guarda se
+                Bhi Guardar_Funcion
+                Movw #Teclado_Est4,EstPres_TCL   ; devuelve al estado 1
+                Bra FIN_Tecl_Est3
+Guardar_Funcion Movb Tecla_IN,Funcion             ; sino pasa al estado 4
+                Movw #Teclado_Est1,EstPres_TCL
+FIN_Tecl_Est3   Rts
+
+;============================= TECLADO ESTADO 4 ================================
+
+Teclado_Est4    Ldaa Tecla_IN
+                Ldab Cont_TCL
                 Ldx #Num_Array
-                Ldaa 1,X
-                Aba
-                Staa ValorNumVueltas
+                Cmpb Max_TCL                    ; Si alcanzo el maximo de cifras
+                Beq Es_Borrar
+                Tstb                            ; Es la primera tecla?
+                Beq Primera_Tecla
+                Cmpa #$0B                       ; Es la tecla Borrar ($0B)?
+                Bne Es_Enter2
+                Tst Cont_TCL                    ; El offset llego a 0?
+                Bne Borrar_Tecl
+                Bra FIN_Tecl_Est4
+Es_Borrar       Cmpa #$0B                       ; Es la tecla Borrar ($0B)?
+                Bne Es_Enter
+Borrar_Tecl     Dec Cont_TCL                    ; Borrar la tecla de Num_Array
+                Ldab Cont_TCL
+                Movb #$FF,B,X
+                Bra FIN_Tecl_Est4
+Es_Enter        Cmpa #$0E                       ; Es la tecla Enter ($0E)?
+                Bne FIN_Tecl_Est4
+Fin_Num_Arr     Movb #0,Cont_TCL                ; Resetear offset
+                Movw #Teclado_Est1,EstPres_TCL
+                BSet Banderas_1,ArrayOK         ; Indicar que Num_Array esta listo
+                Bra FIN_Tecl_Est4
+Primera_Tecla   Cmpa #$0B                       ; Es la tecla Borrar ($0B)?
+                Beq FIN_Tecl_Est4
+                Cmpa #$0E                       ; Es la tecla Enter ($0E)?
+                Beq FIN_Tecl_Est4
+                Bra Agregar_Tecl
+Es_Enter2       Cmpa #$0E
+                Beq Fin_Num_Arr
+Agregar_Tecl    Movb Tecla_IN,B,X               ; Guardar la tecla ingresada
+                Inc Cont_TCL                    ; en Num_Array
+FIN_Tecl_Est4   Movb #$FF,Tecla_IN              ; Limpiar valor Tecla_IN
+                Movw #Teclado_Est1,EstPres_TCL ; Regresar a estado 1
                 Rts
+                
+;******************************************************************************
+;                          SUBRUTINA LEER TECLADO
+;******************************************************************************
 
-;=============================== BCD 7 SEGMENTOS ===============================
-;
-; Descripcion: Esta subrutina toma los valores de BCD1 y BCD2, y busca en la
-; tabla de patrones de segmentos el segmento correspondiente al digito de cada
-; nibble. Luego, guarda los resultados en las variables Dsp1, Dsp2, Dsp3 y Dsp4
-; de la siguiente forma:
-;
-;       BCD2 -> Dsp1:Dsp2
-;       BCD1 -> Dsp3:Dsp4
-
-BCD_7Seg:
-                Ldx #Segment
-                Ldaa BCD2
-                Anda #$F0                         ; Obtener nibble alto de BCD2
-                Lsra                              ; y desplazar a la parte baja
-                Lsra
-                Lsra
-                Lsra
-                Ldab A,X                          ; Cargar patron de segmento
-                Stab DSP1                         ; Guardar en DISP1
-                Ldaa BCD2
-                Anda #$0F                         ; Obtener nibble bajo de BCD2
-                Ldab A,X                          ; Cargar patron de segmento
-                Stab DSP2                         ; Guardar en DISP2
-                Ldaa BCD1
-                Anda #$F0                         ; Obtener nibble alto de BCD1
-                Lsra                              ; y desplazar a la parte baja
-                Lsra
-                Lsra
-                Lsra
-                Ldab A,X                          ; Cargar patron de segmento
-                Stab DSP3                         ; Guardar en DISP3
-                Ldaa BCD1
-                Anda #$0F                         ; Obtener nibble bajo de g 2
-                Ldab A,X                          ; Cargar patron de segmento
-                Stab DSP4                         ; Guardar en DISP4
-FIN_BCD7_Seg    Rts
-
-;================================= BIN BCD MUXP ================================
-
-BIN_BCD_MUXP
-                Movb #7,Cont_BCD
-                Clr BCD
-BIN_BCD_Loop    Lsla                              ; Pasar bits a BCD por medio
-                Rol BCD                           ; del carry
-                Psha                              ; Guardar entrada en la pila
-                Ldab BCD
-                Andb #$0F                         ; Obtener nibble bajo de BCD
-                Cmpb #$05
-                Bcs Nibble_Alto
-                Addb #$03
-Nibble_Alto     Pshb                              ; Guardar nibble bajo actuali-
-                Ldab BCD                          ; zado en la pila
-                Andb #$F0
-                Cmpb #$50
-                Bcs Dec_Cont_BCD
-                Addb #$30
-Dec_Cont_BCD    Pula                              ; Cargar nibble bajo
-                Aba                               ; Sumar nibble bajo y alto
-                Staa BCD                          ; Actualizar valor en BCD
-                Pula                              ; Recargar valor de entrada
-                Dec Cont_BCD                      ; Decrementar #de desplazamiento
-                Tst Cont_BCD                      ; Verificar si llego a cero,
-                Bne BIN_BCD_Loop                  ; Si no, continuar loop
-                Lsla                              ; Desplazar x ultima vez a la
-                Rol BCD                           ; izquierda
-FIN_BIN_BCD     Rts
-
+Leer_Teclado    Clra
+                Movb #$EF,Patron                ; Patron 11101111 para puerto A
+                Ldx #Teclas                     ; Direccion de tabla Teclas
+Cont_Lectura    Movb Patron,PORTA               ; Escribir Patron en puerto A
+                BrClr PORTA,$01,Obt_Tecla       ; Si el bit 0 de PORTA es 0,
+                Inca                            ; el btn esta en la 1er columna
+                BrClr PORTA,$02,Obt_Tecla       ; Si el bit 1 de PORTA es 0,
+                Inca                            ; el btn esta en la 2da columna
+                BrClr PORTA,$04,Obt_Tecla       ; Si el bit 2 de PORTA es 0,
+                Inca                            ; el btn esta en la 2da columna
+                BrClr PORTA,$08,Escribir_Patron
+                Ldab Patron
+                Cmpb #$78                       ; Si Patron llega a 01111000,
+                Beq Clr_Tecla                   ; no se presiono ninguna tecla
+                Lsl Patron                      ; Desplazar a la izquierda
+                Bra Cont_Lectura
+Clr_Tecla       Movb #$FF,Tecla                 ; Limpiar valor de Tecla
+                Bra FIN_Leer_Tecl
+Obt_Tecla       Movb A,X,Tecla                  ; Cargar valor de Tecla de tabla
+                Bra FIN_Leer_Tecl
+Borrar_Tecl_2   Movb #$FF,Tecla                 ; Limpiar valor de Tecla
+                Bra FIN_Leer_Tecl
+Escribir_Patron BSet Patron,$0F                 ; Patron.3:Patron.0 = $F
+                Movb Patron,Tecla               ; Pasar Patron a Tecla
+FIN_Leer_Tecl   Rts
+                
 ;******************************************************************************
 ;                               TAREA LED TESTIGO
 ;******************************************************************************
@@ -1137,6 +1117,52 @@ PantallaMUX_Est2:
 FIN_PantMUX_2   Rts
 
 ;******************************************************************************
+;                                  TAREA LCD
+;******************************************************************************
+
+Tarea_LCD:
+                Ldx EstPres_TareaLCD
+                Jsr 0,X
+                Rts
+
+;============================= TAREA LCD ESTADO 1 ===============================
+
+TareaLCD_Est1:
+                BClr Banderas_2,FinSendLCD        ; Borrar banderas FinSendLCD
+                BClr Banderas_2,RS                ; y RS
+                BrSet Banderas_2,Second_Line,Line_2
+                Movb #ADD_L1,CharLCD              ;
+                Movw Msg_L1,Punt_LCD
+                Bra FIN_TareaLCD_1
+Line_2          Movb #ADD_L2,CharLCD
+                Movw Msg_L2,Punt_LCD
+FIN_TareaLCD_1  Jsr SendLCD
+                Movw #TareaLCD_Est2,EstPres_TareaLCD
+                Rts
+
+;============================= TAREA LCD ESTADO 2 ===============================
+
+TareaLCD_Est2
+                BrClr Banderas_2,FinSendLCD,Call_SendLCD_4
+                BClr Banderas_2,FinSendLCD
+                BSet Banderas_2,RS
+                Ldx Punt_LCD
+                Movb 1,X+,CharLCD
+                Stx Punt_LCD
+                Ldaa CharLCD
+                Cmpa #$FF
+                Bne Call_SendLCD_4
+                BrSet Banderas_2,Second_Line,SwitchLine
+                BSet Banderas_2,Second_Line
+                Bra SigEst_LCD
+SwitchLine      BClr Banderas_2,Second_Line
+                BSet Banderas_2,LCD_OK
+SigEst_LCD      Movw #TareaLCD_Est1,EstPres_TareaLCD
+                Bra FIN_TareaLCD_2
+Call_SendLCD_4  Jsr SendLCD
+FIN_TareaLCD_2  Rts
+
+;******************************************************************************
 ;                                  SEND LCD
 ;******************************************************************************
 
@@ -1201,166 +1227,143 @@ TareaSendLCD_Est4:
                 Movw #TareaSendLCD_Est1,EstPres_SendLCD
 FIN_SendLCD_4   Rts
 
-;******************************************************************************
-;                                  TAREA LCD
-;******************************************************************************
+;*******************************************************************************
+;                               SUBRUTINA BCD_BIN
+;*******************************************************************************
 
-Tarea_LCD:
-                Ldx EstPres_TareaLCD
-                Jsr 0,X
-                Rts
-
-;============================= TAREA LCD ESTADO 1 ===============================
-
-TareaLCD_Est1:
-                BClr Banderas_2,FinSendLCD        ; Borrar banderas FinSendLCD
-                BClr Banderas_2,RS                ; y RS
-                BrSet Banderas_2,Second_Line,Line_2
-                Movb #ADD_L1,CharLCD              ;
-                Movw Msg_L1,Punt_LCD
-                Bra FIN_TareaLCD_1
-Line_2          Movb #ADD_L2,CharLCD
-                Movw Msg_L2,Punt_LCD
-FIN_TareaLCD_1  Jsr SendLCD
-                Movw #TareaLCD_Est2,EstPres_TareaLCD
-                Rts
-
-;============================= TAREA LCD ESTADO 2 ===============================
-
-TareaLCD_Est2
-                BrClr Banderas_2,FinSendLCD,Call_SendLCD_4
-                BClr Banderas_2,FinSendLCD
-                BSet Banderas_2,RS
-                Ldx Punt_LCD
-                Movb 1,X+,CharLCD
-                Stx Punt_LCD
-                Ldaa CharLCD
-                Cmpa #$FF
-                Bne Call_SendLCD_4
-                BrSet Banderas_2,Second_Line,SwitchLine
-                BSet Banderas_2,Second_Line
-                Bra SigEst_LCD
-SwitchLine      BClr Banderas_2,Second_Line
-                BSet Banderas_2,LCD_OK
-SigEst_LCD      Movw #TareaLCD_Est1,EstPres_TareaLCD
-                Bra FIN_TareaLCD_2
-Call_SendLCD_4  Jsr SendLCD
-FIN_TareaLCD_2  Rts
-
-;******************************************************************************
-;                               TAREA TECLADO
-;******************************************************************************
-
-Tarea_Teclado   Ldx EstPres_TCL
-                Jsr 0,X
-                Rts
-
-;============================= TECLADO ESTADO 1 ================================
-
-Teclado_Est1    Jsr Leer_Teclado                  ; Si se presiona alguna tecla
-                Ldaa Tecla
-                Cmpa #$FF
-                Beq FIN_Tecl_Est1
-                Movb #tSupRebTCL,Timer_RebTCL     ; carga timer de supresion de
-                Movw #Teclado_Est2,EstPres_TCL   ; rebotes y siguiente estado
-FIN_Tecl_Est1   Rts
-
-;============================= TECLADO ESTADO 2 ================================
-
-Teclado_Est2    Tst Timer_RebTCL                  ; Si no se agota el timer,
-                Bne FIN_Tecl_Est2                 ; verifica si Tecla = Tecla_IN
-                Movb Tecla,Tecla_IN
-                Jsr Leer_Teclado
-                Ldaa Tecla_IN
-                Cmpa Tecla
-                Bne Regr_Tecl_Est1
-                Movw #Teclado_Est3,EstPres_TCL   ; Si son iguales pasa a est 3
-                Bra FIN_Tecl_Est2
-Regr_Tecl_Est1  Movw #Teclado_Est1,EstPres_TCL   ; Sino se devuelve al 1
-FIN_Tecl_Est2   Rts
-;============================= TECLADO ESTADO 3 ================================
-
-Teclado_Est3    Jsr Leer_Teclado
-                Ldaa Tecla
-                Cmpa #$FF
-                Bne FIN_Tecl_Est3
-                Ldaa Tecla_IN                     ; Si la tecla ingresada es de
-                Cmpa #15                          ; funcion, la guarda se
-                Bhi Guardar_Funcion
-                Movw #Teclado_Est4,EstPres_TCL   ; devuelve al estado 1
-                Bra FIN_Tecl_Est3
-Guardar_Funcion Movb Tecla_IN,Funcion             ; sino pasa al estado 4
-                Movw #Teclado_Est1,EstPres_TCL
-FIN_Tecl_Est3   Rts
-
-;============================= TECLADO ESTADO 4 ================================
-
-Teclado_Est4    Ldaa Tecla_IN
-                Ldab Cont_TCL
+BCD_BIN:
+                Ldaa Num_Array
+                Ldab #10
+                Mul
                 Ldx #Num_Array
-                Cmpb Max_TCL                    ; Si alcanzo el maximo de cifras
-                Beq Es_Borrar
-                Tstb                            ; Es la primera tecla?
-                Beq Primera_Tecla
-                Cmpa #$0B                       ; Es la tecla Borrar ($0B)?
-                Bne Es_Enter2
-                Tst Cont_TCL                    ; El offset llego a 0?
-                Bne Borrar_Tecl
-                Bra FIN_Tecl_Est4
-Es_Borrar       Cmpa #$0B                       ; Es la tecla Borrar ($0B)?
-                Bne Es_Enter
-Borrar_Tecl     Dec Cont_TCL                    ; Borrar la tecla de Num_Array
-                Ldab Cont_TCL
-                Movb #$FF,B,X
-                Bra FIN_Tecl_Est4
-Es_Enter        Cmpa #$0E                       ; Es la tecla Enter ($0E)?
-                Bne FIN_Tecl_Est4
-Fin_Num_Arr     Movb #0,Cont_TCL                ; Resetear offset
-                Movw #Teclado_Est1,EstPres_TCL
-                BSet Banderas_1,ArrayOK         ; Indicar que Num_Array esta listo
-                Bra FIN_Tecl_Est4
-Primera_Tecla   Cmpa #$0B                       ; Es la tecla Borrar ($0B)?
-                Beq FIN_Tecl_Est4
-                Cmpa #$0E                       ; Es la tecla Enter ($0E)?
-                Beq FIN_Tecl_Est4
-                Bra Agregar_Tecl
-Es_Enter2       Cmpa #$0E
-                Beq Fin_Num_Arr
-Agregar_Tecl    Movb Tecla_IN,B,X               ; Guardar la tecla ingresada
-                Inc Cont_TCL                    ; en Num_Array
-FIN_Tecl_Est4   Movb #$FF,Tecla_IN              ; Limpiar valor Tecla_IN
-                Movw #Teclado_Est1,EstPres_TCL ; Regresar a estado 1
+                Ldaa 1,X
+                Aba
+                Staa ValorNumVueltas
                 Rts
 
-;******************************************************************************
-;                          SUBRUTINA LEER TECLADO
-;******************************************************************************
+;*******************************************************************************
+;                               SUBRUTINA CALCULA
+;*******************************************************************************
 
-Leer_Teclado    Clra
-                Movb #$EF,Patron                ; Patron 11101111 para puerto A
-                Ldx #Teclas                     ; Direccion de tabla Teclas
-Cont_Lectura    Movb Patron,PORTA               ; Escribir Patron en puerto A
-                BrClr PORTA,$01,Obt_Tecla       ; Si el bit 0 de PORTA es 0,
-                Inca                            ; el btn esta en la 1er columna
-                BrClr PORTA,$02,Obt_Tecla       ; Si el bit 1 de PORTA es 0,
-                Inca                            ; el btn esta en la 2da columna
-                BrClr PORTA,$04,Obt_Tecla       ; Si el bit 2 de PORTA es 0,
-                Inca                            ; el btn esta en la 2da columna
-                BrClr PORTA,$08,Escribir_Patron
-                Ldab Patron
-                Cmpb #$78                       ; Si Patron llega a 01111000,
-                Beq Clr_Tecla                   ; no se presiono ninguna tecla
-                Lsl Patron                      ; Desplazar a la izquierda
-                Bra Cont_Lectura
-Clr_Tecla       Movb #$FF,Tecla                 ; Limpiar valor de Tecla
-                Bra FIN_Leer_Tecl
-Obt_Tecla       Movb A,X,Tecla                  ; Cargar valor de Tecla de tabla
-                Bra FIN_Leer_Tecl
-Borrar_Tecl_2   Movb #$FF,Tecla                 ; Limpiar valor de Tecla
-                Bra FIN_Leer_Tecl
-Escribir_Patron BSet Patron,$0F                 ; Patron.3:Patron.0 = $F
-                Movb Patron,Tecla               ; Pasar Patron a Tecla
-FIN_Leer_Tecl   Rts
+Calcula:
+                Ldd #tTimerCal                    ; tTimerCal=100
+                Subb TimerCal                     ; tTimerCal-(tTimerCal)
+                Ldx #10                           ; Pasar a cantidad de ticks
+                Idiv
+                Tfr X,A                           ; Mover parte baja a A
+                Staa DeltaT
+                Ldaa #DeltaS                      ; DeltaS=50 mts
+                Ldab #36
+                Mul                               ; (DeltaS)*36
+                Pshd
+                Ldaa DeltaT                       ; Paso DeltaT calculado a X
+                Tfr A,X
+                Puld
+                Idiv                              ; (DeltaS)*36/DeltaT
+                Tfr X,D
+                Ldx #10
+                Idiv                              ; (DeltaS)*36/(DeltaT*10)
+                Tfr X,A
+                Staa Velocidad                    ; Velocidad=(DeltaS)*36/(DeltaT*10)
+                Ldaa #DeltaM                      ; DeltaM = 150 mts
+                Ldab #100
+                Mul                               ; (DeltaM)*100
+                Pshd
+                Ldaa Velocidad
+                Tfr A,X
+                Puld
+                Idiv                              ; (DeltaM)*100/(Velocidad)
+                Tfr X,D
+                Ldx #36
+                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
+                Tfr X,A
+                Staa TimerIniPant                 ; TimerIniPant = lo de arriba
+                Ldaa #DeltaP                      ; DeltaP = 250 mts
+                Ldab #100
+                Mul                               ; (DeltaP)*100
+                Pshd
+                Ldaa Velocidad
+                Tfr A,X
+                Puld
+                Idiv                              ; (DeltaP)*100/(Velocidad)
+                Tfr X,D
+                Ldx #36
+                Idiv                              ; (DeltaP)*100/((Velocidad)*36)
+                Tfr X,A
+                Staa TimerFinPant                 ; TimerFinPant = lo de arriba
+                Rts
+                
+;*******************************************************************************
+;                           SUBRUTINA BIN_BCD_MUXP
+;*******************************************************************************
+
+BIN_BCD_MUXP
+                Movb #7,Cont_BCD
+                Clr BCD
+BIN_BCD_Loop    Lsla                              ; Pasar bits a BCD por medio
+                Rol BCD                           ; del carry
+                Psha                              ; Guardar entrada en la pila
+                Ldab BCD
+                Andb #$0F                         ; Obtener nibble bajo de BCD
+                Cmpb #$05
+                Bcs Nibble_Alto
+                Addb #$03
+Nibble_Alto     Pshb                              ; Guardar nibble bajo actuali-
+                Ldab BCD                          ; zado en la pila
+                Andb #$F0
+                Cmpb #$50
+                Bcs Dec_Cont_BCD
+                Addb #$30
+Dec_Cont_BCD    Pula                              ; Cargar nibble bajo
+                Aba                               ; Sumar nibble bajo y alto
+                Staa BCD                          ; Actualizar valor en BCD
+                Pula                              ; Recargar valor de entrada
+                Dec Cont_BCD                      ; Decrementar #de desplazamiento
+                Tst Cont_BCD                      ; Verificar si llego a cero,
+                Bne BIN_BCD_Loop                  ; Si no, continuar loop
+                Lsla                              ; Desplazar x ultima vez a la
+                Rol BCD                           ; izquierda
+FIN_BIN_BCD     Rts
+
+;*******************************************************************************
+;                              SUBRUTINA BCD_7SEG
+;*******************************************************************************
+;
+; Descripcion: Esta subrutina toma los valores de BCD1 y BCD2, y busca en la
+; tabla de patrones de segmentos el segmento correspondiente al digito de cada
+; nibble. Luego, guarda los resultados en las variables Dsp1, Dsp2, Dsp3 y Dsp4
+; de la siguiente forma:
+;
+;       BCD2 -> Dsp1:Dsp2
+;       BCD1 -> Dsp3:Dsp4
+
+BCD_7Seg:
+                Ldx #Segment
+                Ldaa BCD2
+                Anda #$F0                         ; Obtener nibble alto de BCD2
+                Lsra                              ; y desplazar a la parte baja
+                Lsra
+                Lsra
+                Lsra
+                Ldab A,X                          ; Cargar patron de segmento
+                Stab DSP1                         ; Guardar en DISP1
+                Ldaa BCD2
+                Anda #$0F                         ; Obtener nibble bajo de BCD2
+                Ldab A,X                          ; Cargar patron de segmento
+                Stab DSP2                         ; Guardar en DISP2
+                Ldaa BCD1
+                Anda #$F0                         ; Obtener nibble alto de BCD1
+                Lsra                              ; y desplazar a la parte baja
+                Lsra
+                Lsra
+                Lsra
+                Ldab A,X                          ; Cargar patron de segmento
+                Stab DSP3                         ; Guardar en DISP3
+                Ldaa BCD1
+                Anda #$0F                         ; Obtener nibble bajo de g 2
+                Ldab A,X                          ; Cargar patron de segmento
+                Stab DSP4                         ; Guardar en DISP4
+FIN_BCD7_Seg    Rts
 
 ;******************************************************************************
 ;                        SUBRUTINA BORRAR NUM ARRAY
@@ -1413,7 +1416,7 @@ Inc_X_Index     Inx
 Rt_Decre_Timers Rts
 
 ;******************************************************************************
-;                       SUBRUTINA DE ATENCION A RTI
+;                            MAQUINA DE TIEMPOS
 ;******************************************************************************
 
 Maquina_Tiempos:
