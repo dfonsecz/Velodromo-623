@@ -2,14 +2,19 @@
 ;                              PROYECTO FINAL
 ;******************************************************************************
 #include registers.inc
+; Autora: Daniela Fonseca Zumbado
+; Version: 1.0
+; Descripción: Este proyecto implementa un velódromo con 4 modos de operación,
+; el cual
 ;******************************************************************************
-;                 RELOCALIZACION DE VECTOR DE INTERRUPCION
+;                 INICIALIZACION DE VECTOR DE INTERRUPCIONES
 ;******************************************************************************
                                 Org $3E4A
                                 dw Maquina_Tiempos
-;******************************************************************************
-;                   DECLARACION DE LAS ESTRUCTURAS DE DATOS
-;******************************************************************************
+                                
+;*******************************************************************************
+;                            DEFINICION DE VALORES
+;*******************************************************************************
 
 ;--- Aqui se colocan los valores de carga para los timers baseT  ----
 
@@ -18,27 +23,123 @@ tTimer10mS:       EQU 500    ;Base de tiempo de 10 mS (20uS x 500)
 tTimer100mS:      EQU 5000   ;Base de tiempo de 100 mS (20uS x 5000)
 tTimer1S:         EQU 50000  ;Base de tiempo de 1 segundo (20uS x 50000)
 
-;--- Aqui se colocan los valores de carga para los timers de la aplicacion  ----
+;--- Valores para la Tarea Teclado ---
 
+tSupRebTCL:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (Teclado)
+
+F1:               EQU $EF    ; Mascara para funcion 1 - Modo espera
+F2:               EQU $DF    ; Mascara para funcion 2 - Modo configurar
+F3:               EQU $BF    ; Mascara para funcion 3 - Modo correr
+F4:               EQU $7F    ; Mascara para funcion 4 - Modo resumen
+
+;--- Valores para la Tarea PantallaMUX ---
+
+tTimerDigito:     EQU 2
+
+MaxCountTicks:    EQU 100    ; Cantidad máxima de ticks para los dígitos
+
+DIG1:             EQU $01    ; Dígito 1 de la pantalla MUX
+DIG2:             EQU $02    ; Dígito 2 de la pantalla MUX
+DIG3:             EQU $04    ; Dígito 3 de la pantalla MUX
+DIG4:             EQU $08    ; Dígito 4 de la pantalla MUX
+
+OFF:              EQU $BB    ; Offset de comando de apagado en la tabla Segment
+GUIONES:          EQU $AA    ; Offset de comando de guin en la tabla Segment
+
+;--- Valores para la Tarea LCD ---
+
+tTimer2ms:        EQU 100    ; Tiempo de timer de 2 mS (20uS x 100)
 tTimer40uS:       EQU 2      ; Tiempo de timer de 40 uS (20uS x 2)
 tTimer260uS:      EQU 13     ; Tiempo de timer de 260 uS (20uS x 13)
-tTimer2ms:        EQU 100    ; Tiempo de timer de 2 mS (20uS x 100)
-tSupRebPB1:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
-tSupRebPB2:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
-tSupRebTCL:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (Teclado)
-tShortP1:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP1:          EQU 2      ; Tiempo minimo LongPress en segundos
-tShortP2:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
-tLongP2:          EQU 2      ; Tiempo minimo LongPress en segundos
-tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
-tTimerDigito:     EQU 2
-tTimerBrillo:     EQU 4
-tTimerCal:        EQU 100    ; Tiempo (100 mS x 100)
-tTimerError:      EQU 3
+
+EOB:              EQU $FF
+
+Clear_Display:    EQU $01
+
+ADD_L1:           EQU $80    ; Direccion de la linea 1 del LCD
+ADD_L2:           EQU $C0    ; Direccion de la linea 2 del LCD
+
+;--- Valores para las tareas Leer PB1 y Leer PB2
 
 PortPB:           EQU PTIH   ; Se define el puerto donde se ubica el PB
 MaskPB1:          EQU $08    ; Se define el bit 3 del PB en el puerto
 MaskPB2:          EQU $01    ; Se define el bit 0 del PB en el puerto
+
+tSupRebPB1:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
+tSupRebPB2:       EQU 10     ; Tiempo de supresion de rebotes x 1 mS (PB)
+tShortP1:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
+tLongP1:          EQU 2      ; Tiempo minimo LongPress en segundos
+tShortP2:         EQU 25     ; Tiempo minimo ShortPress x 10 mS
+tLongP2:          EQU 2      ; Tiempo minimo LongPress en segundos
+
+;--- Valores para la Tarea Espera ---
+
+LDEspera:         EQU $01    ; Mascara para encender LED de Tarea Espera
+
+;--- Valores para la Tarea Configurar ---
+
+LDConfig:         EQU $02    ; Mascara para encender LED de Tarea Configurar
+
+MinNumVueltas:    EQU 3      ; Minimo numero de vueltas
+MaxNumVueltas:    EQU 20     ; Maximo numero de vueltas
+
+;--- Valores para la Tarea Correr ---
+
+LDCorrer:         EQU $04    ; Mascara para encender LED de Tarea Correr
+
+tTimerCal:        EQU 100    ; Tiempo de timer de calculo de 1 S (100 mS x 100)
+tTimerError:      EQU 3      ; Tiempo de timer de error de 3 S (1 S x 3)
+
+DeltaS:           EQU 50     ; Distancia entre sensores de 50 m
+DeltaM:           EQU 150    ; Distancia a Inicio de Mensaje de 150 m
+DeltaP:           EQU 250    ; Distancia a pantalla de 250 m
+
+PortRele:                    ; Puerto al que se encuentra conectado el Rele
+Rele:
+
+VMin:             EQU 35     ; Velocidad minima de 35 km/h
+VMax:             EQU 90     ; Velocidad maxima de 90 km/h
+
+;--- Valores para la Tarea Resumen ---
+
+LDResumen:        EQU $08    ; Mascara para encender LED de Tarea Resumen
+
+;--- Valores para la Tarea Brillo ---
+
+tTimerBrillo:     EQU 4
+MaskSCF:
+
+;--- Valores para la Tarea Led Testigo
+
+tTimerLDTst:      EQU 5      ; Tiempo de parpadeo de LED testigo x 100 mS
+
+;--- Banderas ---
+
+                  ORG $1070
+Banderas_1:       ds 1
+ShortP1:          EQU $01    ; Bandera de pulso corto en boton PB1
+LongP1:           EQU $02    ; Bandera de pulso largo en boton PB1
+ShortP2:          EQU $04    ; Bandera de pulso corto en boton PB2
+LongP2:           EQU $08    ; Bandera de pulso largo en boton PB2
+ArrayOK:          EQU $10    ; Bandera de que array se lleno correctamente
+
+Banderas_2:       ds 1
+RS:               EQU $01
+LCD_OK:           EQU $02
+FinSendLCD:       EQU $04
+Second_Line:      EQU $08
+
+LD_Red:           EQU $10
+LD_Green:         EQU $20
+LD_Blue:          EQU $40
+
+;--- Valores generales ---
+
+Carga_TC4:
+
+;*******************************************************************************
+;                   DECLARACION DE LAS ESTRUCTURAS DE DATOS
+;*******************************************************************************
 
 ;=============================== TAREA TECLADO =================================
 
@@ -53,11 +154,6 @@ Patron:           ds 1       ; Variable para guardar patron a escribir y leer
 Funcion:          ds 1       ; Variable para guardar patron a escribir en LEDs
 EstPres_TCL:      ds 2       ; Variable para direccion de estado de maquina de
                              ; estados Tarea_Teclado
-
-F1:               EQU $EF    ; Mascara para funcion 1 - Modo espera
-F2:               EQU $DF    ; Mascara para funcion 2 - Modo configurar
-F3:               EQU $BF    ; Mascara para funcion 3 - Modo correr
-F4:               EQU $7F    ; Mascara para funcion 4 - Modo resumen
 
 ; Arreglo de teclas presionadas
                   ORG $1010
@@ -84,13 +180,6 @@ Cont_BCD:         ds 1
 BCD1:             ds 1
 BCD2:             ds 1
 
-; Valores
-MaxCountTicks     EQU 100
-DIG1              EQU $01
-DIG2              EQU $02
-DIG3              EQU $04
-DIG4              EQU $08
-
 ;================================== TAREA LCD ==================================
 
 IniDsp:           db $28     ; Function Set
@@ -105,14 +194,6 @@ Msg_L2:           ds 2       ; Puntero a mensaje para la segunda linea de LCD
 EstPres_SendLCD:  ds 2       ; Variable para guardar estado de Tarea Send LCD
 EstPres_TareaLCD: ds 2       ; Variable para guardar estado de Tarea LCD
 
-; Comandos
-Clear_Display:    EQU $01
-
-; Direcciones de las lineas del LCD
-ADD_L1:           EQU $80
-ADD_L2:           EQU $C0
-
-
 ;================================ TAREAS LEER PB ===============================
 
 EstPres_LeerPB1:  ds 2       ; Variable para guardar estado de Leer PB1
@@ -124,9 +205,6 @@ EstPres_TConfig:  ds 2       ; Variable para guardar el estado de Tarea Config
 ValorNumVueltas:  ds 1       ; Variable temporal para el numero de vueltas
 NumVueltas:       ds 1       ; Variable final para el numero de vueltas
 
-MinNumVueltas:    EQU 3
-MaxNumVueltas:    EQU 20
-
 ;================================= TAREA CORRER ================================
 
 EstPres_TCorrer:  ds 2       ; Variable para guardar el estado de Tarea Correr
@@ -134,12 +212,6 @@ DeltaT:           ds 1
 Velocidad:        ds 1
 AcumVelocidad:    ds 2
 Vueltas:          ds 1
-
-DeltaS:           EQU 50
-DeltaM:           EQU 150
-DeltaP:           EQU 250
-VMax:             EQU 90
-VMin:             EQU 35
 
 ;================================= TAREA BRILLO ================================
 
@@ -150,30 +222,7 @@ EstPres_TBrillo:  ds 2       ; Variable para guardar el estado de Tarea Brillo
 EstPres_LDTst:    ds 2       ; Variable para guardar el estado de Tarea Led
                              ; Testigo
 
-;=================================== BANDERAS ==================================
-
-                  ORG $1070
-Banderas_1:       ds 1
-ShortP1:          EQU $01    ; Bandera de pulso corto en boton PB1
-LongP1:           EQU $02    ; Bandera de pulso largo en boton PB1
-ShortP2:          EQU $04    ; Bandera de pulso corto en boton PB2
-LongP2:           EQU $08    ; Bandera de pulso largo en boton PB2
-ArrayOK:          EQU $10    ; Bandera de que array se lleno correctamente
-
-Banderas_2:       ds 1
-RS:               EQU $01
-LCD_OK:           EQU $02
-FinSendLCD:       EQU $04
-Second_Line:      EQU $08
-
-LD_Red:           EQU $10
-LD_Green:         EQU $20
-LD_Blue:          EQU $40
-
 ;================================== GENERALES ==================================
-
-InicioLD:         EQU $55
-TemporalLD:       EQU $AA
 
                   ORG $1080
 LED_Testigo:      ds 1
@@ -389,8 +438,9 @@ Fin_Base1S:      dB $FF
 ;******************************************************************************
 
 Init_LCD        ; Inicializacion de Pantalla LCD (otros)
-                Movw #Msg_Modo_Espera_P1,Msg_L1
-                Movw #Msg_Modo_Espera_P2,Msg_L2
+                ;Movw #Msg_Modo_Espera_P1,Msg_L1
+                ;Movw #Msg_Modo_Espera_P2,Msg_L2
+                ;BClr Banderas_2,LCD_OK
                 Movb #$FF,DDRK                    ; Inicializar como salida
                 Movw #IniDsp,Punt_LCD             ; Cargar direccion de comandos
                 BClr Banderas_2,RS                ; Inicializar banderas en 0
@@ -522,11 +572,11 @@ FIN_TCorrer     Rts
 ;========================= TAREA MODO CORRER ESTADO 1 ==========================
 
 TCorrer_Est1:
-                Movb #$04,LEDS
-                Movw #Msg_Espera_Inicio_P1,Msg_L1
-                Movw #Msg_Espera_Inicio_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
-                Movb #$BB,BCD2
+                Movb #$04,LEDS                    ; Se activa led de modo correr
+                Movw #Msg_Espera_Inicio_P1,Msg_L1 ; Se envia Mensaje Esperando
+                Movw #Msg_Espera_Inicio_P2,Msg_L2 ; Inicio a la pantalla LCD
+                BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
+                Movb #$BB,BCD2                    ; Apagar display de 7 seg
                 Movb #$BB,BCD1
                 Jsr BCD_7Seg
                 Movw #TCorrer_Est2,EstPres_TCorrer
@@ -535,18 +585,22 @@ FIN_TCorrer_1   Rts
 ;========================= TAREA MODO CORRER ESTADO 2 ==========================
 
 TCorrer_Est2:
-                BrClr Banderas_1,LongP2,FIN_TCorrer_2
-                BClr Banderas_1,ShortP2
+                BrClr Banderas_1,LongP2,FIN_TCorrer_2 ; Se activó botón de inicio?
+                Clr DeltaT                        ; Borrar variables relaciona-
+                Clr Velocidad                     ; das con la subrutina
+                Clr TimerIniPant                  ; Calcula
+                Clr TimerFinPant
+                BClr Banderas_1,ShortP2           ; Borrar bandera de Short Press
                 Movw #TCorrer_Est3,EstPres_TCorrer
 FIN_TCorrer_2   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 3 ==========================
 
 TCorrer_Est3:
-                Movw #Msg_Espera_S1_P1,Msg_L1
-                Movw #Msg_Espera_S1_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
-                Movb #$BB,BCD2
+                Movw #Msg_Espera_S1_P1,Msg_L1     ; Se envia Mensaje Esperando
+                Movw #Msg_Espera_S1_P2,Msg_L2     ; S1 a la pantalla LCD
+                BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
+                Movb #$BB,BCD2                    ; Apagar display de 7 seg
                 Movb #$BB,BCD1
                 Jsr BCD_7Seg
                 Movw #TCorrer_Est4,EstPres_TCorrer
@@ -555,24 +609,24 @@ FIN_TCorrer_3   Rts
 ;========================= TAREA MODO CORRER ESTADO 4 ==========================
 
 TCorrer_Est4:
-                BrClr Banderas_1,ShortP1,FIN_TCorrer_4
-                Movb #tTimerCal,TimerCal
-                BClr Banderas_1,ShortP1
-                Movw #Msg_Espera_S2_P1,Msg_L1
-                Movw #Msg_Espera_S2_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
+                BrClr Banderas_1,ShortP1,FIN_TCorrer_4 ; Se activó S1 (PH3)?
+                Movb #tTimerCal,TimerCal          ; Cargar timer de calculo
+                BClr Banderas_1,ShortP1           ; Borrar bandera de Short Press
+                Movw #Msg_Espera_S2_P1,Msg_L1     ; Se envia Mensaje Esperando
+                Movw #Msg_Espera_S2_P2,Msg_L2     ; S2 a la pantalla LCD
+                BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
                 Movw #TCorrer_Est5,EstPres_TCorrer
 FIN_TCorrer_4   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 5 ==========================
 
 TCorrer_Est5:
-                BrClr Banderas_1,ShortP2,Bra_To_Fin
-                BClr Banderas_1,ShortP2
+                BrClr Banderas_1,ShortP2,Bra_To_Fin ; Se activó S2 (PH0)?
+                ;BClr Banderas_1,ShortP2
                 Jsr Calcula
                 Ldaa Velocidad
                 Cmpa #VMin
-                Bcs Fuera_Rango
+                Blo Fuera_Rango
                 Cmpa #VMax
                 Bhi Fuera_Rango
                 Movw #Msg_TimerPant_P1,Msg_L1
@@ -664,15 +718,16 @@ Tarea_Resumen:
                Movb #$08,LEDS
                Tst Vueltas
                Beq Entrada_Es_0
+               Ldaa Vueltas
+               Tfr A,X
                Ldd AcumVelocidad
-               Ldx Vueltas
                Idiv
                Tfr X,A
 Call_BIN_BCD   Jsr BIN_BCD_MUXP
-               Movb BCD,BCD2
+               Movb BCD,BCD1
                Ldaa Vueltas
                Jsr BIN_BCD_MUXP
-               Movb BCD,BCD1
+               Movb BCD,BCD2
                Jsr BCD_7Seg
                Movw #Msg_Resumen_P1,Msg_L1
                Movw #Msg_Resumen_P2,Msg_L2
@@ -771,10 +826,10 @@ Calcula:
                 Ldab #100
                 Mul                               ; (DeltaP)*100
                 Pshd
-		Ldaa Velocidad
+                Ldaa Velocidad
                 Tfr A,X
                 Puld
-		Idiv                              ; (DeltaP)*100/(Velocidad)
+                Idiv                              ; (DeltaP)*100/(Velocidad)
                 Tfr X,D
                 Ldx #36
                 Idiv                              ; (DeltaP)*100/((Velocidad)*36)
