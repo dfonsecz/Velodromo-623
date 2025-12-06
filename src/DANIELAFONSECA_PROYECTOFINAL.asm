@@ -5,7 +5,7 @@
 ;
 ; Autora: Daniela Fonseca Zumbado
 ; Version: 1.0
-; Descripción: Este proyecto implementa un Velódromo
+; Descripciï¿½n: Este proyecto implementa un Velï¿½dromo
 ;
 ;===============================================================================
 ;                 INICIALIZACION DE VECTOR DE INTERRUPCIONES
@@ -91,12 +91,12 @@ tLongP2:          EQU 2      ; Tiempo minimo LongPress en segundos
 
 tTimerDigito:     EQU 2
 
-MaxCountTicks:    EQU 100    ; Cantidad máxima de ticks para los dígitos
+MaxCountTicks:    EQU 100    ; Cantidad mï¿½xima de ticks para los dï¿½gitos
 
-DIG1:             EQU $01    ; Dígito 1 de la pantalla MUX
-DIG2:             EQU $02    ; Dígito 2 de la pantalla MUX
-DIG3:             EQU $04    ; Dígito 3 de la pantalla MUX
-DIG4:             EQU $08    ; Dígito 4 de la pantalla MUX
+DIG1:             EQU $01    ; Dï¿½gito 1 de la pantalla MUX
+DIG2:             EQU $02    ; Dï¿½gito 2 de la pantalla MUX
+DIG3:             EQU $04    ; Dï¿½gito 3 de la pantalla MUX
+DIG4:             EQU $08    ; Dï¿½gito 4 de la pantalla MUX
 
 OFF:              EQU $BB    ; Offset de comando de apagado en la tabla Segment
 GUIONES:          EQU $AA    ; Offset de comando de guin en la tabla Segment
@@ -355,23 +355,33 @@ Fin_Base1S:      dB $FF
 ;===============================================================================
                               Org $2000
 
+        ; Configuracion de LEDs
         BSet DDRB,$FF      ;Habilitacion de los LEDs
         BSet DDRJ,$02      ;como comprobacion del timer de 1 segundo
         BSet PTJ,$02       ;haciendo toogle
-        
-        BSet DDRE,Rele     ; Poner puerto de rele como salida
 
+        ; Configuracion de 7 seg
         BSet DDRP,$7F
         BSet PTP,$0F       ; Apagar display
+        
+        ; Configuracion de LCD
+        Movb #$F0,DDRA
+        BSet PUCR,$01
+        
+        ; Configuracion de rele
+        BSet DDRE,Rele     ; Poner puerto de rele como salida
+        
+        ; Configuracion del ATD
+        Movb #$C0,ATD0CTL2 ; Encender ATD con fast clear flag
+        Movb #$20,ATD0CTL3 ; 4 conversiones
+        Movb #$90,ATD0CTL4 ; SRES = 1, SMP1:SMP0 = 00, PRS = 16
 
+        ; Configuracion del MCD
         BClr MCCTL,#$04    ; Borrar enable
-        Movb #$E3,MCCTL    ; Habilitar interrupciones module count down con
+        Movb #$C3,MCCTL    ; Habilitar interrupciones module count down con
                            ; divisor 16
         BSet MCCTL,#$04    ; Poner el enable
         Movw #30,MCCNT     ; Cargar valor inicial de contador
-
-        Movb #$F0,DDRA
-        BSet PUCR,$01
 
 ;===============================================================================
 ;                           PROGRAMA PRINCIPAL
@@ -401,10 +411,6 @@ Fin_Base1S:      dB $FF
         ; Inicializacion de Pantalla LCD (timers)
         Movw #tTimer260uS,Timer260uS
         Movw #tTimer40uS,Timer40uS
-
-        Movb #$C0,ATD0CTL2
-        Movb #$20,ATD0CTL3
-        Movb #$90,ATD0CTL4
 
         ; Pantalla MUX
         Movb #$01,Cont_Dig
@@ -495,6 +501,7 @@ Tarea_Modo_Espera
                 Ldaa Funcion                      ; La funcion actual es Modo
                 Cmpa #F1                          ; Espera?
                 Bne FIN_Modo_Espera
+                BClr Funcion,$F0
                 Movw #Msg_Modo_Espera_P1,Msg_L1   ; Si lo es, enviar mensaje de
                 Movw #Msg_Modo_Espera_P2,Msg_L2   ; Modo Espera al LCD
                 BClr Banderas_2,LCD_OK            ; Se borra bandera LCD_OK
@@ -586,19 +593,18 @@ FIN_TCorrer_1   Rts
 ;========================= TAREA MODO CORRER ESTADO 2 ==========================
 
 TCorrer_Est2:
-                BrClr Banderas_1,LongP2,FIN_TCorrer_2 ; Se activó botón de inicio?
-                Ldaa Vueltas                      ; Si se alcanzó NumVueltas,
+                BrClr Banderas_1,LongP2,FIN_TCorrer_2 ; Se activï¿½ botï¿½n de inicio?
+                Ldaa Vueltas                      ; Si se alcanzï¿½ NumVueltas,
                 Cmpa NumVueltas                   ; limpiar Vueltas al empezar
-                Beq Reset_Vueltas                 ; nuevo ciclo
-                BClr PortRele,Rele                ; Apagar relé
+                Bne Skip_Reset                    ; nuevo ciclo
+                Clr Vueltas
+Skip_Reset      BClr PortRele,Rele                ; Apagar relï¿½
                 Clr DeltaT                        ; Borrar variables relaciona-
                 Clr Velocidad                     ; das con la subrutina
                 Clr TimerIniPant                  ; Calcula
                 Clr TimerFinPant
                 BClr Banderas_1,ShortP2           ; Borrar bandera de Short Press
                 Movw #TCorrer_Est3,EstPres_TCorrer
-                Bra FIN_TCorrer_2
-Reset_Vueltas   Clr Vueltas
 FIN_TCorrer_2   Rts
 
 ;========================= TAREA MODO CORRER ESTADO 3 ==========================
@@ -616,7 +622,7 @@ FIN_TCorrer_3   Rts
 ;========================= TAREA MODO CORRER ESTADO 4 ==========================
 
 TCorrer_Est4:
-                BrClr Banderas_1,ShortP1,FIN_TCorrer_4 ; Se activó S1 (PH3)?
+                BrClr Banderas_1,ShortP1,FIN_TCorrer_4 ; Se activï¿½ S1 (PH3)?
                 Movb #tTimerCal,TimerCal          ; Cargar timer de calculo
                 BClr Banderas_1,ShortP1           ; Borrar bandera de Short Press
                 Movw #Msg_Espera_S2_P1,Msg_L1     ; Se envia Mensaje Esperando
@@ -628,7 +634,7 @@ FIN_TCorrer_4   Rts
 ;========================= TAREA MODO CORRER ESTADO 5 ==========================
 
 TCorrer_Est5:
-                BrClr Banderas_1,ShortP2,Bra_To_Fin ; Se activó S2 (PH0)?
+                BrClr Banderas_1,ShortP2,Bra_To_Fin ; Se activï¿½ S2 (PH0)?
                 BClr Banderas_1,ShortP2
                 Jsr Calcula
                 Ldaa Velocidad
@@ -648,7 +654,6 @@ TCorrer_Est5:
                 Movb BCD,BCD2                     ; Mostrar en Dsp1 y Dsp2
                 Clra                              ; Obtener valor de Timer
                 Ldab TimerFinPant                 ; FinPant en segundos
-                Subb TimerIniPant                 ; Restar TimerIniPant
                 Ldx #10
                 Idiv                              ; TimerFinPant/10
                 Tfr X,A
@@ -690,13 +695,13 @@ TCorrer_Est6:
                 Ldaa Velocidad                    ; Convertir velocidad a BCD
                 Jsr BIN_BCD_MUXP                  ; Mostrar velocidad en Dsp1
                 Movb BCD,BCD2                     ; y Dsp2
-                Ldaa Vueltas                      ;
-                Jsr BIN_BCD_MUXP
-                Movb BCD,BCD1
+                Ldaa Vueltas                      ; Convertir vueltas a BCD
+                Jsr BIN_BCD_MUXP                  ; Mostrar vueltas en Dsp3
+                Movb BCD,BCD1                     ; y Dsp4
                 Jsr BCD_7Seg
-                Movw #Msg_Resultados_P1,Msg_L1
-                Movw #Msg_Resultados_P2,Msg_L2
-                BClr Banderas_2,LCD_OK
+                Movw #Msg_Resultados_P1,Msg_L1    ; Se envia Mensaje Resultados
+                Movw #Msg_Resultados_P2,Msg_L2    ; a la pantalla LCD
+                BClr Banderas_2,LCD_OK            ; Se borra la bandera LCD_OK
                 Movw #TCorrer_Est8,EstPres_TCorrer
 FIN_TCorrer_6   Rts
 
@@ -734,6 +739,7 @@ Tarea_Resumen:
                Ldaa Funcion
                Cmpa #F4
                Bne FIN_Resumen
+               BClr Funcion,$F0
                Movb #LDResumen,LEDS
                Tst Vueltas
                Beq Entrada_Es_0
@@ -1264,14 +1270,14 @@ BCD_BIN:
 ;                               SUBRUTINA CALCULA
 ;===============================================================================
 ;
-; Descripcion: Esta subrutina realiza los cálculos de DeltaT (tiempo que tarda
+; Descripcion: Esta subrutina realiza los cï¿½lculos de DeltaT (tiempo que tarda
 ; el ciclista en pasar del sensor S1 y sensor S2), Velocidad (basada en la dis-
 ; tancia entre S1 y S2, y DeltaT), TimerIniPant (tiempo para alcanzar la posi-
-; ción de Inicio de Mensaje) y TimerFinPant (tiempo para alcanzar la posición
+; ciï¿½n de Inicio de Mensaje) y TimerFinPant (tiempo para alcanzar la posiciï¿½n
 ; de la pantalla)
 ;
 ; Ecuaciones:
-; DeltaT 	=  tTimerCal-TimerCal		[ticks]
+; DeltaT         =  tTimerCal-TimerCal                [ticks]
 ; Velocidad 	= (DeltaS/DeltaT)*36    	[km/h]
 ; TimerIniPant  = (DeltaM/Velocidad)*36         [ticks]
 ; TimerFinPant  = (DeltaP/Velocidad)*36         [ticks]
